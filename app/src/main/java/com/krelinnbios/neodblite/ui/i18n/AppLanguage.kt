@@ -53,9 +53,6 @@ object AppLanguagePreference {
 }
 
 data class AppStrings(
-    val navDiscover: String,
-    val navShelf: String,
-    val navProfile: String,
     val navSettings: String,
     val language: String,
     val themeColor: String,
@@ -336,9 +333,6 @@ private val Visibility.en: String get() = when (this) {
 }
 
 val ZH_HANS = AppStrings(
-    navDiscover = "发现",
-    navShelf = "书架",
-    navProfile = "我的",
     navSettings = "设置",
     language = "语言",
     themeColor = "主题颜色",
@@ -427,9 +421,6 @@ val ZH_HANS = AppStrings(
 )
 
 val ZH_HANT = ZH_HANS.copy(
-    navDiscover = "發現",
-    navShelf = "書架",
-    navProfile = "我的",
     navSettings = "設定",
     language = "語言",
     themeColor = "主題顏色",
@@ -517,9 +508,6 @@ val ZH_HANT = ZH_HANS.copy(
 )
 
 val JA = ZH_HANS.copy(
-    navDiscover = "発見",
-    navShelf = "本棚",
-    navProfile = "自分",
     navSettings = "設定",
     language = "言語",
     themeColor = "テーマカラー",
@@ -608,9 +596,6 @@ val JA = ZH_HANS.copy(
 )
 
 val EN = ZH_HANS.copy(
-    navDiscover = "Discover",
-    navShelf = "Shelf",
-    navProfile = "Me",
     navSettings = "Settings",
     language = "Language",
     themeColor = "Theme color",

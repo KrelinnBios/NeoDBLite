@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
@@ -26,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -44,9 +44,10 @@ import com.krelinnbios.neodblite.ui.page.DiscoverPage
 import com.krelinnbios.neodblite.ui.page.ItemDetailPage
 import com.krelinnbios.neodblite.ui.page.LoginPage
 import com.krelinnbios.neodblite.ui.page.ProfilePage
-import com.krelinnbios.neodblite.ui.page.SearchPage
 import com.krelinnbios.neodblite.ui.page.SettingsPage
 import com.krelinnbios.neodblite.ui.page.ShelfPage
+import com.krelinnbios.neodblite.ui.theme.AppTheme
+import com.krelinnbios.neodblite.ui.theme.AppThemePreference
 import com.krelinnbios.neodblite.ui.theme.NeoDBLiteTheme
 import com.krelinnbios.neodblite.ui.vm.AuthState
 import com.krelinnbios.neodblite.ui.vm.AuthViewModel
@@ -67,12 +68,22 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         handleOAuthRedirect(intent)
         setContent {
-            NeoDBLiteTheme {
+            val context = LocalContext.current
+            var appTheme by androidx.compose.runtime.remember {
+                androidx.compose.runtime.mutableStateOf(AppThemePreference.load(context))
+            }
+            NeoDBLiteTheme(appTheme = appTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    NeoDBLiteApp()
+                    NeoDBLiteApp(
+                        currentTheme = appTheme,
+                        onThemeChange = { theme ->
+                            appTheme = theme
+                            AppThemePreference.save(context, theme)
+                        }
+                    )
                 }
             }
         }
@@ -101,14 +112,16 @@ private data class BottomDestination(
 
 private val bottomDestinations = listOf(
     BottomDestination("discover", "发现", Icons.Filled.Home),
-    BottomDestination("search", "搜索", Icons.Filled.Search),
     BottomDestination("shelf", "书架", Icons.AutoMirrored.Filled.List),
     BottomDestination("profile", "我的", Icons.Filled.Person),
     BottomDestination("settings", "设置", Icons.Filled.Settings)
 )
 
 @Composable
-private fun NeoDBLiteApp() {
+private fun NeoDBLiteApp(
+    currentTheme: AppTheme,
+    onThemeChange: (AppTheme) -> Unit
+) {
     val authVM: AuthViewModel = viewModel()
     val authState by authVM.authState.collectAsStateWithLifecycle()
 
@@ -124,14 +137,21 @@ private fun NeoDBLiteApp() {
     when (val state = authState) {
         is AuthState.Loading -> LoadingBox()
         is AuthState.LoggedOut -> LoginPage(authVM)
-        is AuthState.LoggedIn -> MainScaffold(authVM = authVM, userName = state.user)
+        is AuthState.LoggedIn -> MainScaffold(
+            authVM = authVM,
+            userName = state.user,
+            currentTheme = currentTheme,
+            onThemeChange = onThemeChange
+        )
     }
 }
 
 @Composable
 private fun MainScaffold(
     authVM: AuthViewModel,
-    userName: com.krelinnbios.neodblite.data.model.NeoUser
+    userName: com.krelinnbios.neodblite.data.model.NeoUser,
+    currentTheme: AppTheme,
+    onThemeChange: (AppTheme) -> Unit
 ) {
     val navController = rememberNavController()
     val discoverVM: DiscoverViewModel = viewModel()
@@ -207,10 +227,7 @@ private fun MainScaffold(
             modifier = Modifier.fillMaxSize().padding(padding)
         ) {
             composable("discover") {
-                DiscoverPage(discoverVM = discoverVM, onOpenItem = openItem)
-            }
-            composable("search") {
-                SearchPage(searchVM = searchVM, onOpenItem = openItem)
+                DiscoverPage(discoverVM = discoverVM, searchVM = searchVM, onOpenItem = openItem)
             }
             composable("shelf") {
                 ShelfPage(shelfVM = shelfVM, onOpenItem = openItem)
@@ -228,6 +245,8 @@ private fun MainScaffold(
                 SettingsPage(
                     user = userName,
                     host = authVM.currentHost,
+                    currentTheme = currentTheme,
+                    onThemeChange = onThemeChange,
                     onLogout = { authVM.logout() }
                 )
             }
@@ -245,7 +264,7 @@ private fun MainScaffold(
                     onSearchTag = { tag ->
                         searchVM.onQueryChange(tag)
                         searchVM.submit()
-                        navController.navigate("search") {
+                        navController.navigate("discover") {
                             popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                             launchSingleTop = true
                             restoreState = true

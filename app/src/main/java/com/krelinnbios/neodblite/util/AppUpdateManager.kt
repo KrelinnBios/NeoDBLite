@@ -73,6 +73,7 @@ object AppUpdateManager {
     private const val AUTO_CHECK_MIN_INTERVAL_MS = 6L * 60 * 60 * 1000
     private const val PREFS_NAME = "app_update"
     private const val KEY_LAST_AUTO_CHECK = "last_auto_update_check_ms"
+    private const val KEY_AUTO_UPDATE_ENABLED = "auto_update_enabled"
 
     private val gson = Gson()
 
@@ -111,6 +112,18 @@ object AppUpdateManager {
             prefs.edit().putLong(KEY_LAST_AUTO_CHECK, System.currentTimeMillis()).apply()
             checkForUpdate()
         }
+
+    fun isAutoUpdateEnabled(context: Context): Boolean {
+        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_AUTO_UPDATE_ENABLED, true)
+    }
+
+    fun setAutoUpdateEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_AUTO_UPDATE_ENABLED, enabled)
+            .apply()
+    }
 
     suspend fun checkForUpdate(): AppUpdateCheckResult = withContext(Dispatchers.IO) {
         val endpoint = BuildConfig.APP_UPDATE_URL.trim().ifBlank { RELEASES_API_URL }

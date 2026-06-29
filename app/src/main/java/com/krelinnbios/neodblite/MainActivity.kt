@@ -23,6 +23,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -184,15 +187,17 @@ private fun MainScaffold(
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = currentRoute in bottomDestinations.map { it.route }
 
-    // 启动时静默检查更新（带节流）。
-    var updateInfo by androidx.compose.runtime.remember {
-        androidx.compose.runtime.mutableStateOf<AppUpdateInfo?>(null)
-    }
-    val context = androidx.compose.ui.platform.LocalContext.current
-    LaunchedEffect(Unit) {
-        when (val result = AppUpdateManager.checkForUpdateAuto(context)) {
-            is AppUpdateCheckResult.UpdateAvailable -> updateInfo = result.info
-            else -> Unit
+    var updateInfo by remember { mutableStateOf<AppUpdateInfo?>(null) }
+    var hasCheckedAppUpdate by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    val isAutoUpdateEnabled = remember { AppUpdateManager.isAutoUpdateEnabled(context) }
+    LaunchedEffect(isAutoUpdateEnabled) {
+        if (isAutoUpdateEnabled && !hasCheckedAppUpdate) {
+            hasCheckedAppUpdate = true
+            when (val result = AppUpdateManager.checkForUpdateAuto(context)) {
+                is AppUpdateCheckResult.UpdateAvailable -> updateInfo = result.info
+                else -> Unit
+            }
         }
     }
 
@@ -219,7 +224,10 @@ private fun MainScaffold(
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar(Modifier.height(64.dp)) {
+                NavigationBar(
+                    modifier = Modifier.height(64.dp),
+                    containerColor = MaterialTheme.colorScheme.surface
+                ) {
                     bottomDestinations.forEach { dest ->
                         NavigationBarItem(
                             selected = currentRoute == dest.route,

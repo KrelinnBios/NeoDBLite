@@ -27,4 +27,39 @@ class ProfileHtmlParserTest {
             ProfileHtmlParser.parseBio(html)
         )
     }
+
+    @Test
+    fun profileSectionSkipsDisplayNameAndHandle() {
+        val html = """
+            <aside class="grid__aside sidebar">
+              <section class="profile">
+                <article>
+                  <details open>
+                    <summary>
+                      <div>
+                        <hgroup>
+                          <h6 class="nickname">Display Name</h6>
+                          <span class="handler">@demo@example.com</span>
+                        </hgroup>
+                      </div>
+                    </summary>
+                    <span class="action"></span>
+                    <div>
+                      <p>Actual profile text.</p><p>Second line<br>Third line</p>
+                    </div>
+                  </details>
+                </article>
+              </section>
+            </aside>
+        """.trimIndent()
+
+        assertEquals(
+            """
+            Actual profile text.
+            Second line
+            Third line
+            """.trimIndent(),
+            ProfileHtmlParser.parseBio(html)
+        )
+    }
 }

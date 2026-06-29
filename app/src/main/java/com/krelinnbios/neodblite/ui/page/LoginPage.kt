@@ -23,11 +23,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.ui.vm.AuthViewModel
 import com.krelinnbios.neodblite.util.Browser
 
 @Composable
 fun LoginPage(authVM: AuthViewModel) {
+    val strings = LocalAppStrings.current
     val context = LocalContext.current
     val message by authVM.loginMessage.collectAsState()
     var host by rememberSaveable { mutableStateOf(authVM.currentHost) }
@@ -46,7 +48,7 @@ fun LoginPage(authVM: AuthViewModel) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "登录你的 NeoDB 实例，开始标记书影音游",
+            text = strings.loginSubtitle,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -56,7 +58,7 @@ fun LoginPage(authVM: AuthViewModel) {
         OutlinedTextField(
             value = host,
             onValueChange = { host = it },
-            label = { Text("实例域名") },
+            label = { Text(strings.instanceHost) },
             placeholder = { Text("neodb.social") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -68,7 +70,7 @@ fun LoginPage(authVM: AuthViewModel) {
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("登录")
+            Text(strings.login)
         }
 
         if (!message.isNullOrBlank()) {
@@ -83,7 +85,7 @@ fun LoginPage(authVM: AuthViewModel) {
 
         Spacer(Modifier.height(28.dp))
         Text(
-            text = "将在浏览器中打开实例授权页，授权后自动返回应用。NeoDB 是去中心化平台，默认实例为 neodb.social，也可填写其它兼容实例。",
+            text = strings.loginHint,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center

@@ -3,6 +3,7 @@ package com.krelinnbios.neodblite.ui.vm
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.krelinnbios.neodblite.data.model.ItemBrief
+import com.krelinnbios.neodblite.data.model.NeoUser
 import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.global.App
 import com.krelinnbios.neodblite.ui.UiState
@@ -12,13 +13,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/** 个人主页数据：各书架数量统计 + 最近「看过」的条目预览。仅用 /api/me/shelf 的 count 与首页数据，不臆造端点。 */
 class ProfileViewModel : ViewModel() {
     private val repo = App.container.repository
 
     data class ProfileStats(
         val counts: Map<ShelfType, Int>,
-        val recent: List<ItemBrief>
+        val recent: List<ItemBrief>,
+        val bio: String?
     )
 
     private val _state = MutableStateFlow<UiState<ProfileStats>>(UiState.Loading)
@@ -27,8 +28,14 @@ class ProfileViewModel : ViewModel() {
     private val _refreshing = MutableStateFlow(false)
     val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
 
-    init {
-        load()
+    private var boundUser: NeoUser? = null
+    private var boundHost: String = ""
+
+    fun bind(user: NeoUser, host: String) {
+        val changed = boundUser != user || boundHost != host
+        boundUser = user
+        boundHost = host
+        if (changed || _state.value is UiState.Loading) load()
     }
 
     fun load() {
@@ -46,6 +53,15 @@ class ProfileViewModel : ViewModel() {
     }
 
     private suspend fun fetch(keepOnError: Boolean = false) {
+        val user = boundUser
+        val host = boundHost
+        val bio = user?.let { currentUser ->
+            val fromPage = if (host.isNotBlank()) {
+                repo.profileBio(currentUser, host).getOrNull()
+            } else null
+            fromPage?.takeIf { it.isNotBlank() } ?: currentUser.bioText
+        }
+
         val counts = linkedMapOf<ShelfType, Int>()
         var recent: List<ItemBrief> = emptyList()
         var lastError: Throwable? = null
@@ -66,7 +82,7 @@ class ProfileViewModel : ViewModel() {
                 _state.value = UiState.Error(lastError!!.friendlyMessage())
             }
         } else {
-            _state.value = UiState.Success(ProfileStats(counts, recent))
+            _state.value = UiState.Success(ProfileStats(counts, recent, bio))
         }
     }
 }

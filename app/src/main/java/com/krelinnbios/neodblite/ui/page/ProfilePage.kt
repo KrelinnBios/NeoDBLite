@@ -162,6 +162,7 @@ private fun ProfileHeader(
     val strings = LocalAppStrings.current
     val context = LocalContext.current
     val url = user.url
+    var bioExpanded by remember(user.url, user.username, user.externalAcct) { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             val avatar = user.avatar
@@ -211,17 +212,33 @@ private fun ProfileHeader(
         }
 
         Spacer(Modifier.height(16.dp))
-        Text(
-            text = strings.bio,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = bio?.takeIf { it.isNotBlank() } ?: strings.noBio,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { bioExpanded = !bioExpanded }
+                .padding(vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = strings.bio,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                imageVector = Icons.Filled.ArrowDropDown,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        if (bioExpanded) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = bio?.takeIf { it.isNotBlank() } ?: strings.noBio,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
         url?.takeIf { it.isNotBlank() }?.let {
             Spacer(Modifier.height(14.dp))
             OutlinedButton(

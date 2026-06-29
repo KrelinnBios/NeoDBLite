@@ -39,8 +39,8 @@ import coil.compose.AsyncImage
 import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.NeoUser
 import com.krelinnbios.neodblite.data.model.ShelfType
-import com.krelinnbios.neodblite.data.model.shelfLabel
 import com.krelinnbios.neodblite.ui.UiState
+import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.ui.component.CoverImage
 import com.krelinnbios.neodblite.ui.component.EmptyBox
 import com.krelinnbios.neodblite.ui.component.ErrorBox
@@ -145,21 +145,21 @@ private fun ProfileHeader(user: NeoUser, host: String) {
         }
 
         Spacer(Modifier.height(16.dp))
-        ProfileInfoLine(label = "登录实例", value = host)
+        ProfileInfoLine(label = LocalAppStrings.current.instanceHost, value = host)
         user.username?.takeIf { it.isNotBlank() }?.let {
-            ProfileInfoLine(label = "用户名", value = it)
+            ProfileInfoLine(label = LocalAppStrings.current.username, value = it)
         }
         user.displayName?.takeIf { it.isNotBlank() && it != user.username }?.let {
-            ProfileInfoLine(label = "显示名", value = it)
+            ProfileInfoLine(label = LocalAppStrings.current.displayName, value = it)
         }
         url?.takeIf { it.isNotBlank() }?.let {
-            ProfileInfoLine(label = "主页", value = compactUrl(it))
+            ProfileInfoLine(label = LocalAppStrings.current.homepage, value = compactUrl(it))
             Spacer(Modifier.height(12.dp))
             OutlinedButton(
                 onClick = { Browser.open(context, it) },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("在浏览器中打开主页")
+                Text(LocalAppStrings.current.openHomepage)
             }
         }
     }
@@ -196,7 +196,7 @@ private fun ShelfSummary(
     val total = ShelfType.entries.sumOf { counts[it] ?: 0 }
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Text(
-            text = "书架概览",
+            text = LocalAppStrings.current.shelfOverview,
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 8.dp, bottom = 10.dp)
@@ -212,13 +212,13 @@ private fun ShelfSummary(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "累计标记",
+                        text = LocalAppStrings.current.totalMarks,
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text = "已同步当前账号书架数据",
+                        text = LocalAppStrings.current.shelfSynced,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.78f)
                     )
@@ -274,7 +274,7 @@ private fun StatTile(
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                text = shelfLabel(type, null),
+                text = LocalAppStrings.current.shelfLabel(type, null),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                 maxLines = 1,
@@ -291,14 +291,14 @@ private fun RecentSection(
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = "最近完成",
+            text = LocalAppStrings.current.recentComplete,
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 10.dp)
         )
         if (items.isEmpty()) {
             Box(modifier = Modifier.fillMaxWidth().height(120.dp)) {
-                EmptyBox("还没有完成的条目")
+                EmptyBox(LocalAppStrings.current.noCompleteItems)
             }
         } else {
             LazyRow(

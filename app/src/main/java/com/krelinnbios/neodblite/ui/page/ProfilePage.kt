@@ -42,6 +42,7 @@ import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.data.model.shelfLabel
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.component.CoverImage
+import com.krelinnbios.neodblite.ui.component.EmptyBox
 import com.krelinnbios.neodblite.ui.component.ErrorBox
 import com.krelinnbios.neodblite.ui.component.LoadingBox
 import com.krelinnbios.neodblite.ui.vm.ProfileViewModel
@@ -64,40 +65,33 @@ fun ProfilePage(
         onRefresh = { profileVM.refresh() },
         modifier = Modifier.fillMaxSize()
     ) {
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 24.dp)
+        ) {
             item { ProfileHeader(user = user, host = host) }
 
             when (val s = state) {
                 is UiState.Loading -> item {
-                    Box(modifier = Modifier.fillMaxWidth().height(160.dp)) { LoadingBox() }
+                    Box(modifier = Modifier.fillMaxWidth().height(180.dp)) { LoadingBox() }
                 }
                 is UiState.Error -> item {
-                    Box(modifier = Modifier.fillMaxWidth().height(160.dp)) {
+                    Box(modifier = Modifier.fillMaxWidth().height(180.dp)) {
                         ErrorBox(s.message, onRetry = { profileVM.load() })
                     }
                 }
                 is UiState.Success -> {
                     item {
-                        StatsRow(counts = s.data.counts, onOpenShelf = onOpenShelf)
+                        ShelfSummary(
+                            counts = s.data.counts,
+                            onOpenShelf = onOpenShelf
+                        )
                     }
-                    if (s.data.recent.isNotEmpty()) {
-                        item {
-                            Text(
-                                text = "最近标记",
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(start = 16.dp, top = 20.dp, bottom = 8.dp)
-                            )
-                            LazyRow(
-                                contentPadding = PaddingValues(horizontal = 16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                items(s.data.recent) { item ->
-                                    RecentCover(item = item, onClick = { onOpenItem(item) })
-                                }
-                            }
-                            Spacer(Modifier.height(24.dp))
-                        }
+                    item {
+                        RecentSection(
+                            items = s.data.recent,
+                            onOpenItem = onOpenItem
+                        )
                     }
                 }
             }
@@ -108,6 +102,7 @@ fun ProfilePage(
 @Composable
 private fun ProfileHeader(user: NeoUser, host: String) {
     val context = LocalContext.current
+    val url = user.url
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             val avatar = user.avatar
@@ -116,12 +111,16 @@ private fun ProfileHeader(user: NeoUser, host: String) {
                     model = avatar,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(72.dp).clip(CircleShape)
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
             } else {
                 Spacer(
-                    modifier = Modifier.size(72.dp).clip(CircleShape)
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
             }
@@ -129,12 +128,12 @@ private fun ProfileHeader(user: NeoUser, host: String) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = user.bestName,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(4.dp))
                 Text(
                     text = user.externalAcct?.takeIf { it.isNotBlank() } ?: host,
                     style = MaterialTheme.typography.bodyMedium,
@@ -144,11 +143,20 @@ private fun ProfileHeader(user: NeoUser, host: String) {
                 )
             }
         }
-        val url = user.url
-        if (!url.isNullOrBlank()) {
-            Spacer(Modifier.height(14.dp))
+
+        Spacer(Modifier.height(16.dp))
+        ProfileInfoLine(label = "登录实例", value = host)
+        user.username?.takeIf { it.isNotBlank() }?.let {
+            ProfileInfoLine(label = "用户名", value = it)
+        }
+        user.displayName?.takeIf { it.isNotBlank() && it != user.username }?.let {
+            ProfileInfoLine(label = "显示名", value = it)
+        }
+        url?.takeIf { it.isNotBlank() }?.let {
+            ProfileInfoLine(label = "主页", value = compactUrl(it))
+            Spacer(Modifier.height(12.dp))
             OutlinedButton(
-                onClick = { Browser.open(context, url) },
+                onClick = { Browser.open(context, it) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("在浏览器中打开主页")
@@ -158,36 +166,147 @@ private fun ProfileHeader(user: NeoUser, host: String) {
 }
 
 @Composable
-private fun StatsRow(
+private fun ProfileInfoLine(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(72.dp)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun ShelfSummary(
     counts: Map<ShelfType, Int>,
     onOpenShelf: (ShelfType) -> Unit
 ) {
-    val order = listOf(ShelfType.WISHLIST, ShelfType.PROGRESS, ShelfType.COMPLETE)
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        order.forEach { type ->
-            Surface(
-                modifier = Modifier.weight(1f).clickable { onOpenShelf(type) },
-                shape = RoundedCornerShape(14.dp),
-                color = MaterialTheme.colorScheme.secondaryContainer
+    val total = ShelfType.entries.sumOf { counts[it] ?: 0 }
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        Text(
+            text = "书架概览",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 8.dp, bottom = 10.dp)
+        )
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.primaryContainer
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = (counts[type] ?: 0).toString(),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                        text = "累计标记",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text = shelfLabel(type, null),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                        text = "已同步当前账号书架数据",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.78f)
                     )
+                }
+                Text(
+                    text = total.toString(),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        val rows = listOf(
+            listOf(ShelfType.WISHLIST, ShelfType.PROGRESS),
+            listOf(ShelfType.COMPLETE, ShelfType.DROPPED)
+        )
+        rows.forEach { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                row.forEach { type ->
+                    StatTile(
+                        type = type,
+                        count = counts[type] ?: 0,
+                        onClick = { onOpenShelf(type) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+        }
+    }
+}
+
+@Composable
+private fun StatTile(
+    type: ShelfType,
+    count: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.clickable(onClick = onClick),
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
+            Text(
+                text = count.toString(),
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = shelfLabel(type, null),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecentSection(
+    items: List<ItemBrief>,
+    onOpenItem: (ItemBrief) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "最近完成",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 10.dp)
+        )
+        if (items.isEmpty()) {
+            Box(modifier = Modifier.fillMaxWidth().height(120.dp)) {
+                EmptyBox("还没有完成的条目")
+            }
+        } else {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(items) { item ->
+                    RecentCover(item = item, onClick = { onOpenItem(item) })
                 }
             }
         }
@@ -197,10 +316,10 @@ private fun StatsRow(
 @Composable
 private fun RecentCover(item: ItemBrief, onClick: () -> Unit) {
     Column(
-        modifier = Modifier.width(92.dp).clickable(onClick = onClick)
+        modifier = Modifier.width(96.dp).clickable(onClick = onClick)
     ) {
-        CoverImage(url = item.coverImageUrl, modifier = Modifier.width(92.dp).height(130.dp))
-        Spacer(Modifier.height(4.dp))
+        CoverImage(url = item.coverImageUrl, modifier = Modifier.width(96.dp).height(136.dp))
+        Spacer(Modifier.height(6.dp))
         Text(
             text = item.bestTitle,
             style = MaterialTheme.typography.bodySmall,
@@ -210,3 +329,8 @@ private fun RecentCover(item: ItemBrief, onClick: () -> Unit) {
         )
     }
 }
+
+private fun compactUrl(url: String): String =
+    url.removePrefix("https://")
+        .removePrefix("http://")
+        .trimEnd('/')

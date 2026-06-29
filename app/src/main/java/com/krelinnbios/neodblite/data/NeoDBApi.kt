@@ -11,6 +11,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -39,6 +40,12 @@ interface NeoDBApi {
     /** 用条目自带的 api_url（相对 baseUrl）拉取详情，避免各类目路径差异。 */
     @GET
     suspend fun itemByPath(@Url path: String): ItemBrief
+    /** 网页端 htmx 片段，用于读取条目公开短评/长评/笔记。 */
+    @GET
+    suspend fun htmlFragment(
+        @Url path: String,
+        @Header("HX-Request") hxRequest: String = "true"
+    ): ResponseBody
 
     @GET("api/me/shelf/{type}")
     suspend fun shelf(

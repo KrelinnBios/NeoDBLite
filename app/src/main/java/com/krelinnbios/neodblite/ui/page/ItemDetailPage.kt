@@ -27,6 +27,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -48,12 +49,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.krelinnbios.neodblite.data.model.Category
+import com.krelinnbios.neodblite.data.model.CommunityEntry
+import com.krelinnbios.neodblite.data.model.CommunityEntryType
 import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.MarkInRequest
 import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.data.model.Visibility
-import com.krelinnbios.neodblite.data.model.shelfLabel
 import com.krelinnbios.neodblite.ui.UiState
+import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.ui.component.CoverImage
 import com.krelinnbios.neodblite.ui.component.ErrorBox
 import com.krelinnbios.neodblite.ui.component.LoadingBox
@@ -78,7 +81,7 @@ private fun sourceLabel(url: String): String {
         "igdb" in host -> "IGDB"
         "steam" in host -> "Steam"
         "google" in host && "books" in url -> "Google Books"
-        else -> host.removePrefix("www.").ifBlank { "外部链接" }
+        else -> host.removePrefix("www.").ifBlank { "External link" }
     }
 }
 
@@ -98,9 +101,11 @@ fun ItemDetailPage(
     onBack: () -> Unit,
     onSearchTag: (String) -> Unit
 ) {
+    val strings = LocalAppStrings.current
     val context = LocalContext.current
     val itemState by detailVM.item.collectAsState()
     val mark by detailVM.mark.collectAsState()
+    val community by detailVM.community.collectAsState()
     val toast by detailVM.toast.collectAsState()
 
     var showSheet by remember { mutableStateOf(false) }
@@ -116,10 +121,10 @@ fun ItemDetailPage(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("详情", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                title = { Text(strings.detail, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back)
                     }
                 }
             )
@@ -135,10 +140,11 @@ fun ItemDetailPage(
                         val cat = Category.fromApi(s.data.category ?: s.data.type)
                         val shelf = ShelfType.fromApi(it.shelfType)
                         buildString {
-                            if (shelf != null) append(shelfLabel(shelf, cat))
-                            it.ratingGrade?.takeIf { g -> g > 0 }?.let { g -> append(" · 我的评分 $g/10") }
+                            if (shelf != null) append(strings.shelfLabel(shelf, cat))
+                            it.ratingGrade?.takeIf { g -> g > 0 }?.let { g -> append(" · ${strings.myRating} $g/10") }
                         }
                     },
+                    community = community,
                     onMark = { showSheet = true },
                     onSearchTag = onSearchTag
                 )
@@ -196,9 +202,11 @@ fun ItemDetailPage(
 private fun DetailContent(
     item: ItemBrief,
     markSummary: String?,
+    community: UiState<List<CommunityEntry>>?,
     onMark: () -> Unit,
     onSearchTag: (String) -> Unit
 ) {
+    val strings = LocalAppStrings.current
     val context = LocalContext.current
     Column(
         modifier = Modifier
@@ -229,8 +237,8 @@ private fun DetailContent(
                     RatingStars(rating = item.rating)
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = Format.ratingText(item.rating) +
-                            (item.ratingCount?.let { "（$it 人）" } ?: ""),
+                        text = (if (item.rating == null || item.rating <= 0.0) strings.noRating else Format.ratingText(item.rating)) +
+                            (item.ratingCount?.let { " ($it${strings.peopleCountSuffix})" } ?: ""),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -240,7 +248,7 @@ private fun DetailContent(
 
         Spacer(Modifier.height(16.dp))
         Button(onClick = onMark, modifier = Modifier.fillMaxWidth()) {
-            Text(if (markSummary.isNullOrBlank()) "标记" else "修改标记")
+            Text(if (markSummary.isNullOrBlank()) strings.mark else strings.editMark)
         }
         if (!markSummary.isNullOrBlank()) {
             Spacer(Modifier.height(8.dp))
@@ -266,7 +274,7 @@ private fun DetailContent(
 
         if (!item.brief.isNullOrBlank()) {
             Spacer(Modifier.height(20.dp))
-            Text("简介", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+            Text(strings.intro, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(6.dp))
             Text(
                 text = item.brief!!,
@@ -278,7 +286,7 @@ private fun DetailContent(
         val sources = item.externalResources.orEmpty().mapNotNull { it.url }.filter { it.isNotBlank() }
         if (sources.isNotEmpty()) {
             Spacer(Modifier.height(20.dp))
-            Text("来源", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+            Text(strings.sources, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(6.dp))
             sources.forEach { url ->
                 Text(
@@ -293,6 +301,8 @@ private fun DetailContent(
             }
         }
 
+        CommunitySection(community = community, browserUrl = remember(item) { itemWebUrl(item) })
+
         val browserUrl = remember(item) { itemWebUrl(item) }
         if (!browserUrl.isNullOrBlank()) {
             Spacer(Modifier.height(16.dp))
@@ -300,13 +310,111 @@ private fun DetailContent(
                 onClick = { Browser.open(context, browserUrl) },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("在浏览器中打开")
+                Text(strings.openInBrowser)
             }
         }
         Spacer(Modifier.height(32.dp))
     }
 }
 
+
+@Composable
+private fun CommunitySection(
+    community: UiState<List<CommunityEntry>>?,
+    browserUrl: String?
+) {
+    val strings = LocalAppStrings.current
+    val context = LocalContext.current
+    Spacer(Modifier.height(20.dp))
+    Text(strings.communityContent, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+    Spacer(Modifier.height(8.dp))
+    when (community) {
+        null, is UiState.Loading -> Text(
+            text = strings.loading,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        is UiState.Error -> Text(
+            text = strings.communityLoadFailed,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        is UiState.Success -> {
+            val entries = community.data
+            if (entries.isEmpty()) {
+                Text(
+                    text = strings.noCommunityContent,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                entries.take(5).forEach { entry ->
+                    CommunityEntryCard(entry = entry)
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
+        }
+    }
+    if (!browserUrl.isNullOrBlank()) {
+        Spacer(Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = { Browser.open(context, browserUrl) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(strings.openCommunityInBrowser)
+        }
+    }
+}
+
+@Composable
+private fun CommunityEntryCard(entry: CommunityEntry) {
+    val strings = LocalAppStrings.current
+    val context = LocalContext.current
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                entry.url?.takeIf { it.isNotBlank() }?.let { url ->
+                    Modifier.clickable { Browser.open(context, url) }
+                } ?: Modifier
+            ),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = when (entry.type) {
+                        CommunityEntryType.COMMENT -> strings.comments
+                        CommunityEntryType.REVIEW -> strings.reviews
+                        CommunityEntryType.NOTE -> strings.notes
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                val meta = listOf(entry.author, entry.action).filter { it.isNotBlank() }.joinToString(" · ")
+                if (meta.isNotBlank()) {
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = meta,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = entry.content,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 4,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
 /** 标记编辑草稿。 */
 data class MarkDraft(
     val shelf: ShelfType,
@@ -346,21 +454,21 @@ private fun MarkEditor(
             .padding(start = 20.dp, end = 20.dp, bottom = 28.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Text("状态", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+        Text(LocalAppStrings.current.status, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ShelfType.entries.forEach { type ->
                 FilterChip(
                     selected = type == shelf,
                     onClick = { shelf = type },
-                    label = { Text(shelfLabel(type, category)) }
+                    label = { Text(LocalAppStrings.current.shelfLabel(type, category)) }
                 )
             }
         }
 
         Spacer(Modifier.height(16.dp))
         Text(
-            text = if (grade > 0) "评分：$grade / 10" else "评分：未评分",
+            text = if (grade > 0) "${LocalAppStrings.current.rating}: $grade / 10" else "${LocalAppStrings.current.rating}: ${LocalAppStrings.current.unrated}",
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -372,14 +480,14 @@ private fun MarkEditor(
         )
 
         Spacer(Modifier.height(8.dp))
-        Text("可见性", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+        Text(LocalAppStrings.current.visibility, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Visibility.entries.forEach { v ->
                 FilterChip(
                     selected = v == visibility,
                     onClick = { visibility = v },
-                    label = { Text(v.label) }
+                    label = { Text(LocalAppStrings.current.visibilityLabel(v)) }
                 )
             }
         }
@@ -388,7 +496,7 @@ private fun MarkEditor(
         OutlinedTextField(
             value = comment,
             onValueChange = { comment = it },
-            label = { Text("短评（可选）") },
+            label = { Text(LocalAppStrings.current.shortCommentOptional) },
             modifier = Modifier.fillMaxWidth(),
             minLines = 3
         )
@@ -397,7 +505,7 @@ private fun MarkEditor(
         OutlinedTextField(
             value = tagsText,
             onValueChange = { tagsText = it },
-            label = { Text("标签（空格或逗号分隔，可选）") },
+            label = { Text(LocalAppStrings.current.tagsOptional) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -409,7 +517,7 @@ private fun MarkEditor(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                "同步到联邦宇宙",
+                LocalAppStrings.current.syncToFediverse,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -432,12 +540,12 @@ private fun MarkEditor(
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("保存标记")
+            Text(LocalAppStrings.current.saveMark)
         }
         if (hasExisting) {
             Spacer(Modifier.height(8.dp))
             OutlinedButton(onClick = onDelete, modifier = Modifier.fillMaxWidth()) {
-                Text("删除标记")
+                Text(LocalAppStrings.current.deleteMark)
             }
         }
     }

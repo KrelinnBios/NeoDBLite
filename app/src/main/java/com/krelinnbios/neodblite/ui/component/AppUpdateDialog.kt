@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.util.AppDownloadProgress
 import com.krelinnbios.neodblite.util.AppUpdateInfo
 import com.krelinnbios.neodblite.util.AppUpdateManager
@@ -28,6 +29,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun AppUpdateDialog(info: AppUpdateInfo, onDismiss: () -> Unit) {
+    val strings = LocalAppStrings.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var downloading by remember { mutableStateOf(false) }
@@ -36,7 +38,7 @@ fun AppUpdateDialog(info: AppUpdateInfo, onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = { if (!downloading) onDismiss() },
-        title = { Text("发现新版本 v${info.versionName}") },
+        title = { Text("${strings.newVersionPrefix}${info.versionName}") },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 if (info.releaseNotes.isNotBlank()) {
@@ -60,7 +62,7 @@ fun AppUpdateDialog(info: AppUpdateInfo, onDismiss: () -> Unit) {
                         (p.downloadedBytes.toFloat() / p.totalBytes).coerceIn(0f, 1f)
                     } else 0f
                     Text(
-                        text = "${p.sourceLabel}（源 ${p.sourceIndex}/${p.sourceCount}）",
+                        text = "${p.sourceLabel} (${strings.sourceLabelPrefix} ${p.sourceIndex}/${p.sourceCount})",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -87,12 +89,12 @@ fun AppUpdateDialog(info: AppUpdateInfo, onDismiss: () -> Unit) {
                         val result = AppUpdateManager.downloadAndOpenInstaller(context, info) { progress = it }
                         downloading = false
                         result.onFailure {
-                            error = "下载失败：${it.message ?: "未知错误"}，可前往 Releases 手动下载"
+                            error = "${strings.downloadFailedPrefix}${it.message ?: strings.unknownError}"
                         }
                     }
                 }
             ) {
-                Text(if (downloading) "下载中…" else "下载并安装")
+                Text(if (downloading) strings.downloading else strings.downloadAndInstall)
             }
         },
         dismissButton = {
@@ -100,7 +102,7 @@ fun AppUpdateDialog(info: AppUpdateInfo, onDismiss: () -> Unit) {
                 enabled = !downloading,
                 onClick = { AppUpdateManager.openReleasesPage(context) }
             ) {
-                Text("前往 Releases")
+                Text(strings.goReleases)
             }
         }
     )

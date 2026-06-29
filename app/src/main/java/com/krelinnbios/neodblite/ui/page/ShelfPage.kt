@@ -1,10 +1,10 @@
 package com.krelinnbios.neodblite.ui.page
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,10 +19,12 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -33,14 +35,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.krelinnbios.neodblite.data.model.Category
 import com.krelinnbios.neodblite.data.model.ItemBrief
+import com.krelinnbios.neodblite.data.model.MarkInRequest
+import com.krelinnbios.neodblite.data.model.MarkSchema
 import com.krelinnbios.neodblite.data.model.ShelfType
+import com.krelinnbios.neodblite.data.model.Visibility
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.component.EmptyBox
 import com.krelinnbios.neodblite.ui.component.ErrorBox
 import com.krelinnbios.neodblite.ui.component.LoadingBox
+import com.krelinnbios.neodblite.ui.component.MarkDraft
+import com.krelinnbios.neodblite.ui.component.MarkEditor
 import com.krelinnbios.neodblite.ui.component.MarkRow
 import com.krelinnbios.neodblite.ui.component.ShelfCalendar
 import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
@@ -53,15 +61,24 @@ fun ShelfPage(
     onOpenItem: (ItemBrief) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val context = LocalContext.current
     val shelfType by shelfVM.shelfType.collectAsState()
     val category by shelfVM.category.collectAsState()
     val state by shelfVM.state.collectAsState()
     val loadingMore by shelfVM.loadingMore.collectAsState()
     val refreshing by shelfVM.refreshing.collectAsState()
+    val toast by shelfVM.toast.collectAsState()
 
     var showCalendar by remember { mutableStateOf(false) }
-    // 切换书架/类目时清除选中的日期。
     var selectedDay by remember(shelfType, category) { mutableStateOf<String?>(null) }
+    var editingMark by remember { mutableStateOf<MarkSchema?>(null) }
+
+    LaunchedEffect(toast) {
+        toast?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            shelfVM.consumeToast()
+        }
+    }
 
     val shelves = ShelfType.entries
 
@@ -76,36 +93,34 @@ fun ShelfPage(
             }
         }
 
-        Row(
+        LazyRow(
             modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            LazyRow(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                item {
-                    FilterChip(
-                        selected = category == null,
-                        onClick = { shelfVM.selectCategory(null) },
-                        label = { Text(strings.all) }
-                    )
-                }
-                items(Category.entries) { cat ->
-                    FilterChip(
-                        selected = cat == category,
-                        onClick = { shelfVM.selectCategory(cat) },
-                        label = { Text(strings.categoryLabel(cat)) }
+            item {
+                IconButton(onClick = { showCalendar = !showCalendar }) {
+                    Icon(
+                        imageVector = Icons.Filled.DateRange,
+                        contentDescription = null,
+                        tint = if (showCalendar) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
-            IconButton(onClick = { showCalendar = !showCalendar }) {
-                Icon(
-                    imageVector = Icons.Filled.DateRange,
-                    contentDescription = null,
-                    tint = if (showCalendar) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant
+            item {
+                FilterChip(
+                    selected = category == null,
+                    onClick = { shelfVM.selectCategory(null) },
+                    label = { Text(strings.all) }
+                )
+            }
+            items(Category.entries) { cat ->
+                FilterChip(
+                    selected = cat == category,
+                    onClick = { shelfVM.selectCategory(cat) },
+                    label = { Text(strings.categoryLabel(cat)) }
                 )
             }
         }
@@ -153,7 +168,16 @@ fun ShelfPage(
                                     items(displayed) { mark ->
                                         val item = mark.item
                                         if (item != null) {
-                                            MarkRow(mark = mark, onClick = { onOpenItem(item) })
+                                            val editAction: (() -> Unit)? = if (item.uuid.isNullOrBlank()) {
+                                                null
+                                            } else {
+                                                { editingMark = mark }
+                                            }
+                                            MarkRow(
+                                                mark = mark,
+                                                onClick = { onOpenItem(item) },
+                                                onEdit = editAction
+                                            )
                                         }
                                     }
                                     if (loadingMore) {
@@ -174,6 +198,49 @@ fun ShelfPage(
                         }
                     }
                 }
+            }
+        }
+    }
+
+    editingMark?.let { mark ->
+        val item = mark.item
+        val uuid = item?.uuid
+        if (item != null && !uuid.isNullOrBlank()) {
+            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            ModalBottomSheet(
+                onDismissRequest = { editingMark = null },
+                sheetState = sheetState
+            ) {
+                MarkEditor(
+                    category = Category.fromApi(item.category ?: item.type),
+                    existing = MarkDraft(
+                        shelf = ShelfType.fromApi(mark.shelfType) ?: shelfType,
+                        grade = mark.ratingGrade ?: 0,
+                        comment = mark.commentText.orEmpty(),
+                        visibility = Visibility.fromApi(mark.visibility),
+                        tags = mark.tags,
+                        shareToFediverse = false
+                    ),
+                    hasExisting = true,
+                    onSave = { draft ->
+                        shelfVM.saveMark(
+                            uuid,
+                            MarkInRequest(
+                                shelfType = draft.shelf.apiValue,
+                                visibility = draft.visibility.apiValue,
+                                commentText = draft.comment.ifBlank { null },
+                                ratingGrade = draft.grade.takeIf { it > 0 },
+                                tags = draft.tags,
+                                postToFediverse = draft.shareToFediverse
+                            )
+                        )
+                        editingMark = null
+                    },
+                    onDelete = {
+                        shelfVM.deleteMark(uuid)
+                        editingMark = null
+                    }
+                )
             }
         }
     }

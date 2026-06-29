@@ -17,7 +17,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -129,13 +129,6 @@ private val bottomDestinations = listOf(
     BottomDestination("profile", Icons.Filled.Person)
 )
 
-private fun bottomLabel(route: String, strings: AppStrings): String = when (route) {
-    "discover" -> strings.navDiscover
-    "shelf" -> strings.navShelf
-    "profile" -> strings.navProfile
-    else -> route
-}
-
 @Composable
 private fun NeoDBLiteApp(
     currentTheme: AppTheme,
@@ -226,7 +219,6 @@ private fun MainScaffold(
             if (showBottomBar) {
                 NavigationBar {
                     bottomDestinations.forEach { dest ->
-                        val label = bottomLabel(dest.route, strings)
                         NavigationBarItem(
                             selected = currentRoute == dest.route,
                             onClick = {
@@ -240,8 +232,7 @@ private fun MainScaffold(
                                     }
                                 }
                             },
-                            icon = { Icon(dest.icon, contentDescription = label) },
-                            label = { Text(label) }
+                            icon = { Icon(dest.icon, contentDescription = dest.route) }
                         )
                     }
                 }

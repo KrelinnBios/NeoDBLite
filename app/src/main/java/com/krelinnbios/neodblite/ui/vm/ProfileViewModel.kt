@@ -50,7 +50,7 @@ class ProfileViewModel : ViewModel() {
         var recent: List<ItemBrief> = emptyList()
         var lastError: Throwable? = null
 
-        for (type in listOf(ShelfType.WISHLIST, ShelfType.PROGRESS, ShelfType.COMPLETE)) {
+        for (type in ShelfType.entries) {
             repo.shelf(type, null, 1)
                 .onSuccess { paged ->
                     counts[type] = paged.count

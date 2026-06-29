@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -22,7 +24,7 @@ import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.component.EmptyBox
 import com.krelinnbios.neodblite.ui.component.ErrorBox
-import com.krelinnbios.neodblite.ui.component.ItemRow
+import com.krelinnbios.neodblite.ui.component.ItemGridCard
 import com.krelinnbios.neodblite.ui.component.LoadingBox
 import com.krelinnbios.neodblite.ui.vm.DiscoverViewModel
 
@@ -63,9 +65,15 @@ fun DiscoverPage(
                         if (s.data.isEmpty()) {
                             EmptyBox("暂无内容")
                         } else {
-                            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                                items(s.data) { item ->
-                                    ItemRow(item = item, onClick = { onOpenItem(item) })
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(3),
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                gridItems(s.data) { item ->
+                                    ItemGridCard(item = item, onClick = { onOpenItem(item) })
                                 }
                             }
                         }

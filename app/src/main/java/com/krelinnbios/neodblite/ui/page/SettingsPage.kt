@@ -41,6 +41,8 @@ import coil.compose.AsyncImage
 import com.krelinnbios.neodblite.BuildConfig
 import com.krelinnbios.neodblite.data.model.NeoUser
 import com.krelinnbios.neodblite.ui.component.AppUpdateDialog
+import com.krelinnbios.neodblite.ui.i18n.AppLanguage
+import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.ui.theme.AppTheme
 import com.krelinnbios.neodblite.util.AppUpdateCheckResult
 import com.krelinnbios.neodblite.util.AppUpdateInfo
@@ -53,8 +55,11 @@ fun SettingsPage(
     host: String,
     currentTheme: AppTheme,
     onThemeChange: (AppTheme) -> Unit,
+    currentLanguage: AppLanguage,
+    onLanguageChange: (AppLanguage) -> Unit,
     onLogout: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var checking by remember { mutableStateOf(false) }
@@ -68,21 +73,26 @@ fun SettingsPage(
             onLogout = { showLogoutConfirm = true }
         )
         Divider()
+        LanguageSection(
+            currentLanguage = currentLanguage,
+            onLanguageChange = onLanguageChange
+        )
+        Divider()
         ThemeSection(
             currentTheme = currentTheme,
             onThemeChange = onThemeChange
         )
         Divider()
         SettingRow(
-            title = "检查更新",
-            subtitle = if (checking) "检查中…" else "当前版本 v${BuildConfig.VERSION_NAME}",
+            title = strings.checkUpdate,
+            subtitle = if (checking) strings.checking else "${strings.currentVersionPrefix}${BuildConfig.VERSION_NAME}",
             onClick = {
                 if (checking) return@SettingRow
                 checking = true
                 scope.launch {
                     when (val result = AppUpdateManager.checkForUpdate()) {
                         AppUpdateCheckResult.NoUpdate ->
-                            Toast.makeText(context, "已是最新版本", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
                         is AppUpdateCheckResult.UpdateAvailable -> updateInfo = result.info
                         is AppUpdateCheckResult.Failed ->
                             Toast.makeText(context, result.reason, Toast.LENGTH_LONG).show()
@@ -92,14 +102,14 @@ fun SettingsPage(
             }
         )
         SettingRow(
-            title = "Releases 页面",
-            subtitle = "在浏览器中查看历史版本",
+            title = strings.releasesPage,
+            subtitle = strings.releasesSubtitle,
             onClick = { AppUpdateManager.openReleasesPage(context) }
         )
 
         Spacer(Modifier.height(24.dp))
         Text(
-            text = "NeoDB Lite · 非官方 NeoDB 客户端",
+            text = strings.appTagline,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.fillMaxWidth().padding(16.dp)
@@ -113,16 +123,16 @@ fun SettingsPage(
     if (showLogoutConfirm) {
         AlertDialog(
             onDismissRequest = { showLogoutConfirm = false },
-            title = { Text("退出登录") },
-            text = { Text("将清除本地保存的登录令牌，需要重新授权才能继续使用。") },
+            title = { Text(strings.logoutTitle) },
+            text = { Text(strings.logoutMessage) },
             confirmButton = {
                 TextButton(onClick = {
                     showLogoutConfirm = false
                     onLogout()
-                }) { Text("退出") }
+                }) { Text(strings.logout) }
             },
             dismissButton = {
-                TextButton(onClick = { showLogoutConfirm = false }) { Text("取消") }
+                TextButton(onClick = { showLogoutConfirm = false }) { Text(strings.cancel) }
             }
         )
     }
@@ -162,7 +172,7 @@ private fun AccountHeader(
         Spacer(Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = user?.bestName ?: "未登录",
+                text = user?.bestName ?: LocalAppStrings.current.notLoggedIn,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
@@ -178,11 +188,40 @@ private fun AccountHeader(
             )
         }
         TextButton(onClick = onLogout) {
-            Text("退出")
+            Text(LocalAppStrings.current.logout)
         }
     }
 }
 
+
+@Composable
+private fun LanguageSection(
+    currentLanguage: AppLanguage,
+    onLanguageChange: (AppLanguage) -> Unit
+) {
+    val strings = LocalAppStrings.current
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+        Text(
+            text = strings.language,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+        Spacer(Modifier.height(8.dp))
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(AppLanguage.entries) { language ->
+                FilterChip(
+                    selected = language == currentLanguage,
+                    onClick = { onLanguageChange(language) },
+                    label = { Text(strings.languageLabel(language)) }
+                )
+            }
+        }
+    }
+}
 @Composable
 private fun ThemeSection(
     currentTheme: AppTheme,
@@ -190,7 +229,7 @@ private fun ThemeSection(
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
         Text(
-            text = "主题颜色",
+            text = LocalAppStrings.current.themeColor,
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(horizontal = 16.dp)

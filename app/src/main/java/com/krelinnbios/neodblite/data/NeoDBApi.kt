@@ -47,6 +47,9 @@ interface NeoDBApi {
         @Header("HX-Request") hxRequest: String = "true"
     ): ResponseBody
 
+    @GET
+    suspend fun htmlPage(@Url path: String): ResponseBody
+
     @GET("api/me/shelf/{type}")
     suspend fun shelf(
         @Path("type") type: String,

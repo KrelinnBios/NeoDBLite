@@ -8,8 +8,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -20,6 +20,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -40,6 +41,11 @@ import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.global.OAuthBus
 import com.krelinnbios.neodblite.ui.component.AppUpdateDialog
 import com.krelinnbios.neodblite.ui.component.LoadingBox
+import com.krelinnbios.neodblite.ui.i18n.AppLanguage
+import com.krelinnbios.neodblite.ui.i18n.AppLanguagePreference
+import com.krelinnbios.neodblite.ui.i18n.AppStrings
+import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
+import com.krelinnbios.neodblite.ui.i18n.appStringsFor
 import com.krelinnbios.neodblite.ui.page.DiscoverPage
 import com.krelinnbios.neodblite.ui.page.ItemDetailPage
 import com.krelinnbios.neodblite.ui.page.LoginPage
@@ -72,18 +78,28 @@ class MainActivity : ComponentActivity() {
             var appTheme by androidx.compose.runtime.remember {
                 androidx.compose.runtime.mutableStateOf(AppThemePreference.load(context))
             }
+            var appLanguage by androidx.compose.runtime.remember {
+                androidx.compose.runtime.mutableStateOf(AppLanguagePreference.load(context))
+            }
             NeoDBLiteTheme(appTheme = appTheme) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    NeoDBLiteApp(
-                        currentTheme = appTheme,
-                        onThemeChange = { theme ->
-                            appTheme = theme
-                            AppThemePreference.save(context, theme)
-                        }
-                    )
+                CompositionLocalProvider(LocalAppStrings provides appStringsFor(appLanguage)) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        NeoDBLiteApp(
+                            currentTheme = appTheme,
+                            onThemeChange = { theme ->
+                                appTheme = theme
+                                AppThemePreference.save(context, theme)
+                            },
+                            currentLanguage = appLanguage,
+                            onLanguageChange = { language ->
+                                appLanguage = language
+                                AppLanguagePreference.save(context, language)
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -106,21 +122,30 @@ class MainActivity : ComponentActivity() {
 
 private data class BottomDestination(
     val route: String,
-    val label: String,
     val icon: ImageVector
 )
 
 private val bottomDestinations = listOf(
-    BottomDestination("discover", "发现", Icons.Filled.Home),
-    BottomDestination("shelf", "书架", Icons.AutoMirrored.Filled.List),
-    BottomDestination("profile", "我的", Icons.Filled.Person),
-    BottomDestination("settings", "设置", Icons.Filled.Settings)
+    BottomDestination("discover", Icons.Filled.Home),
+    BottomDestination("shelf", Icons.AutoMirrored.Filled.List),
+    BottomDestination("profile", Icons.Filled.Person),
+    BottomDestination("settings", Icons.Filled.Settings)
 )
+
+private fun bottomLabel(route: String, strings: AppStrings): String = when (route) {
+    "discover" -> strings.navDiscover
+    "shelf" -> strings.navShelf
+    "profile" -> strings.navProfile
+    "settings" -> strings.navSettings
+    else -> route
+}
 
 @Composable
 private fun NeoDBLiteApp(
     currentTheme: AppTheme,
-    onThemeChange: (AppTheme) -> Unit
+    onThemeChange: (AppTheme) -> Unit,
+    currentLanguage: AppLanguage,
+    onLanguageChange: (AppLanguage) -> Unit
 ) {
     val authVM: AuthViewModel = viewModel()
     val authState by authVM.authState.collectAsStateWithLifecycle()
@@ -141,7 +166,9 @@ private fun NeoDBLiteApp(
             authVM = authVM,
             userName = state.user,
             currentTheme = currentTheme,
-            onThemeChange = onThemeChange
+            onThemeChange = onThemeChange,
+            currentLanguage = currentLanguage,
+            onLanguageChange = onLanguageChange
         )
     }
 }
@@ -151,8 +178,11 @@ private fun MainScaffold(
     authVM: AuthViewModel,
     userName: com.krelinnbios.neodblite.data.model.NeoUser,
     currentTheme: AppTheme,
-    onThemeChange: (AppTheme) -> Unit
+    onThemeChange: (AppTheme) -> Unit,
+    currentLanguage: AppLanguage,
+    onLanguageChange: (AppLanguage) -> Unit
 ) {
+    val strings = LocalAppStrings.current
     val navController = rememberNavController()
     val discoverVM: DiscoverViewModel = viewModel()
     val searchVM: SearchViewModel = viewModel()
@@ -200,6 +230,7 @@ private fun MainScaffold(
             if (showBottomBar) {
                 NavigationBar {
                     bottomDestinations.forEach { dest ->
+                        val label = bottomLabel(dest.route, strings)
                         NavigationBarItem(
                             selected = currentRoute == dest.route,
                             onClick = {
@@ -213,8 +244,8 @@ private fun MainScaffold(
                                     }
                                 }
                             },
-                            icon = { Icon(dest.icon, contentDescription = dest.label) },
-                            label = { Text(dest.label) }
+                            icon = { Icon(dest.icon, contentDescription = label) },
+                            label = { Text(label) }
                         )
                     }
                 }
@@ -247,6 +278,8 @@ private fun MainScaffold(
                     host = authVM.currentHost,
                     currentTheme = currentTheme,
                     onThemeChange = onThemeChange,
+                    currentLanguage = currentLanguage,
+                    onLanguageChange = onLanguageChange,
                     onLogout = { authVM.logout() }
                 )
             }

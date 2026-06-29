@@ -34,6 +34,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -62,6 +63,7 @@ import com.krelinnbios.neodblite.data.model.NeoUser
 import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.component.AppUpdateDialog
+import com.krelinnbios.neodblite.ui.component.AppUpdateFailureDialog
 import com.krelinnbios.neodblite.ui.component.CoverImage
 import com.krelinnbios.neodblite.ui.component.EmptyBox
 import com.krelinnbios.neodblite.ui.component.ErrorBox
@@ -266,7 +268,11 @@ private fun ProfileSettingsDialog(
     val scope = rememberCoroutineScope()
     var checking by remember { mutableStateOf(false) }
     var updateInfo by remember { mutableStateOf<AppUpdateInfo?>(null) }
+    var manualUpdateFailure by remember { mutableStateOf<String?>(null) }
     var showLogoutConfirm by remember { mutableStateOf(false) }
+    var isAutoUpdateEnabled by remember {
+        mutableStateOf(AppUpdateManager.isAutoUpdateEnabled(context))
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -317,6 +323,14 @@ private fun ProfileSettingsDialog(
                     }
                 }
 
+                AutoUpdateRow(
+                    enabled = isAutoUpdateEnabled,
+                    onEnabledChange = { enabled ->
+                        isAutoUpdateEnabled = enabled
+                        AppUpdateManager.setAutoUpdateEnabled(context, enabled)
+                    }
+                )
+
                 Divider(modifier = Modifier.padding(vertical = 6.dp))
 
                 ClickRow(
@@ -332,7 +346,7 @@ private fun ProfileSettingsDialog(
                                 Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
                             is AppUpdateCheckResult.UpdateAvailable -> updateInfo = result.info
                             is AppUpdateCheckResult.Failed ->
-                                Toast.makeText(context, result.reason, Toast.LENGTH_LONG).show()
+                                manualUpdateFailure = result.reason
                         }
                         checking = false
                     }
@@ -352,6 +366,10 @@ private fun ProfileSettingsDialog(
 
     updateInfo?.let { info ->
         AppUpdateDialog(info = info, onDismiss = { updateInfo = null })
+    }
+
+    manualUpdateFailure?.let {
+        AppUpdateFailureDialog(reason = it, onDismiss = { manualUpdateFailure = null })
     }
 
     if (showLogoutConfirm) {
@@ -447,6 +465,28 @@ private fun ClickRow(
             Spacer(Modifier.height(2.dp))
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    }
+}
+
+@Composable
+private fun AutoUpdateRow(
+    enabled: Boolean,
+    onEnabledChange: (Boolean) -> Unit
+) {
+    val strings = LocalAppStrings.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onEnabledChange(!enabled) }
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(strings.autoUpdateCheck, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+            Spacer(Modifier.height(2.dp))
+            Text(strings.autoUpdateCheckSubtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(checked = enabled, onCheckedChange = onEnabledChange)
     }
 }
 

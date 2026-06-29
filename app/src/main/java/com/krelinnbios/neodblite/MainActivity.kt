@@ -240,7 +240,16 @@ private fun MainScaffold(
                 ItemDetailPage(
                     path = path,
                     detailVM = detailVM,
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onSearchTag = { tag ->
+                        searchVM.onQueryChange(tag)
+                        searchVM.submit()
+                        navController.navigate("search") {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
                 )
             }
         }

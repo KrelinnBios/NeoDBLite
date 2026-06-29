@@ -3,6 +3,8 @@ package com.krelinnbios.neodblite.ui.page
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -92,7 +95,8 @@ private fun itemWebUrl(item: ItemBrief): String? {
 fun ItemDetailPage(
     path: String,
     detailVM: DetailViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onSearchTag: (String) -> Unit
 ) {
     val context = LocalContext.current
     val itemState by detailVM.item.collectAsState()
@@ -135,7 +139,8 @@ fun ItemDetailPage(
                             it.ratingGrade?.takeIf { g -> g > 0 }?.let { g -> append(" · 我的评分 $g/10") }
                         }
                     },
-                    onMark = { showSheet = true }
+                    onMark = { showSheet = true },
+                    onSearchTag = onSearchTag
                 )
             }
         }
@@ -186,11 +191,13 @@ fun ItemDetailPage(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DetailContent(
     item: ItemBrief,
     markSummary: String?,
-    onMark: () -> Unit
+    onMark: () -> Unit,
+    onSearchTag: (String) -> Unit
 ) {
     val context = LocalContext.current
     Column(
@@ -242,6 +249,19 @@ private fun DetailContent(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary
             )
+        }
+
+        val tags = item.tags.orEmpty().filter { it.isNotBlank() }
+        if (tags.isNotEmpty()) {
+            Spacer(Modifier.height(16.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(tags) { tag ->
+                    AssistChip(
+                        onClick = { onSearchTag(tag) },
+                        label = { Text(tag, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                    )
+                }
+            }
         }
 
         if (!item.brief.isNullOrBlank()) {

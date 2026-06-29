@@ -11,13 +11,19 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -74,6 +80,7 @@ fun ShelfCalendar(
     val primary = MaterialTheme.colorScheme.primary
 
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+        var showPicker by remember { mutableStateOf(false) }
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -81,13 +88,65 @@ fun ShelfCalendar(
             IconButton(onClick = { ymOverride = shiftMonth(ym, -1) }) {
                 Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = null)
             }
-            Text(
-                text = ym,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.weight(1f)
-            )
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Text(
+                    text = ym,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.clickable { showPicker = true }
+                )
+                DropdownMenu(expanded = showPicker, onDismissRequest = { showPicker = false }) {
+                    var pickYear by remember { mutableStateOf(year) }
+                    Column(modifier = Modifier.padding(8.dp).width(220.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            IconButton(onClick = { pickYear-- }) {
+                                Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = null)
+                            }
+                            Text(
+                                text = pickYear.toString(),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            IconButton(onClick = { pickYear++ }) {
+                                Icon(Icons.Filled.KeyboardArrowRight, contentDescription = null)
+                            }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(4),
+                            modifier = Modifier.fillMaxWidth().height(160.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            items((1..12).toList()) { m ->
+                                val monthStr = "%02d".format(m)
+                                val selected = ym == "%04d-%02d".format(pickYear, m)
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth().clickable {
+                                        ymOverride = "%04d-%02d".format(pickYear, m)
+                                        showPicker = false
+                                    },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (selected) MaterialTheme.colorScheme.primaryContainer
+                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                ) {
+                                    Text(
+                                        text = monthStr,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             IconButton(onClick = { ymOverride = shiftMonth(ym, 1) }) {
                 Icon(Icons.Filled.KeyboardArrowRight, contentDescription = null)
             }

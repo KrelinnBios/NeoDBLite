@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,9 +29,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.MarkSchema
 import com.krelinnbios.neodblite.ui.theme.ratingStar
@@ -80,8 +83,12 @@ fun CoverImage(url: String?, modifier: Modifier = Modifier) {
             .background(MaterialTheme.colorScheme.surfaceVariant)
     ) {
         if (!url.isNullOrBlank()) {
+            val context = LocalContext.current
             AsyncImage(
-                model = url,
+                model = ImageRequest.Builder(context)
+                    .data(url)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
@@ -109,6 +116,34 @@ fun RatingStars(rating: Double?, modifier: Modifier = Modifier) {
                 tint = ratingStar,
                 modifier = Modifier.size(16.dp)
             )
+        }
+    }
+}
+
+/** 发现页网格卡片：封面优先 + 标题 + 评分星。 */
+@Composable
+fun ItemGridCard(item: ItemBrief, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.clickable(onClick = onClick)
+    ) {
+        CoverImage(
+            url = item.coverImageUrl,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(2f / 3f)
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = item.bestTitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+        Spacer(Modifier.height(2.dp))
+        // 有评分才显示星，未评分留空避免误读为 0 分。
+        item.rating?.takeIf { it > 0.0 }?.let {
+            RatingStars(rating = it)
         }
     }
 }

@@ -133,7 +133,7 @@ fun ShelfCalendar(
                                     },
                                     shape = RoundedCornerShape(8.dp),
                                     color = if (selected) MaterialTheme.colorScheme.primaryContainer
-                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                    else MaterialTheme.colorScheme.surfaceVariant
                                 ) {
                                     Text(
                                         text = monthStr,

@@ -28,7 +28,7 @@ object CommunityHtmlParser {
             CommunityEntryType.REVIEW, CommunityEntryType.NOTE -> tldrRegex.find(section)?.groupValues?.getOrNull(1)
         } ?: tldrRegex.find(section)?.groupValues?.getOrNull(1)
 
-        val content = clean(contentHtml)
+        val content = clean(contentHtml.orEmpty())
         if (content.isBlank()) return null
 
         val author = clean(nicknameRegex.find(section)?.groupValues?.getOrNull(1).orEmpty())

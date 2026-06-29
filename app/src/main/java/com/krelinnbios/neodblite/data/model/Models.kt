@@ -88,13 +88,31 @@ data class NeoUser(
     @SerializedName("external_acct") val externalAcct: String? = null,
     @SerializedName("display_name") val displayName: String? = null,
     val username: String? = null,
-    val avatar: String? = null
+    val avatar: String? = null,
+    // 简介：不同实例字段名可能不同，尽量都收一下。
+    val note: String? = null,
+    val summary: String? = null,
+    val bio: String? = null
 ) {
     val bestName: String
         get() = displayName?.takeIf { it.isNotBlank() }
             ?: username?.takeIf { it.isNotBlank() }
             ?: externalAcct?.takeIf { it.isNotBlank() }
             ?: "我"
+
+    /** 个人简介纯文本：取 note/summary/bio 中第一个非空，去掉 HTML 标签。 */
+    val bioText: String?
+        get() {
+            val raw = listOf(note, summary, bio).firstOrNull { !it.isNullOrBlank() } ?: return null
+            return raw.replace(Regex("<[^>]+>"), " ")
+                .replace("&nbsp;", " ")
+                .replace("&amp;", "&")
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace(Regex("\\s+"), " ")
+                .trim()
+                .takeIf { it.isNotBlank() }
+        }
 }
 
 /** POST /api/v1/apps 的返回。 */

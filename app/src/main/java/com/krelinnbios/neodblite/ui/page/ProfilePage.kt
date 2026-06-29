@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.krelinnbios.neodblite.BuildConfig
 import com.krelinnbios.neodblite.data.model.ItemBrief
@@ -73,7 +74,7 @@ import com.krelinnbios.neodblite.util.AppUpdateManager
 import com.krelinnbios.neodblite.util.Browser
 import kotlinx.coroutines.launch
 
-private const val FEEDBACK_URL = "https://github.com/KrelinnBios/NeoDBLite/issues"
+private const val FEEDBACK_URL = "https://github.com/KrelinnBios/NeoDBLite/issues/new"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -201,16 +202,19 @@ private fun ProfileHeader(
         }
 
         Spacer(Modifier.height(16.dp))
-        ProfileInfoLine(label = strings.instanceHost, value = host)
-        user.username?.takeIf { it.isNotBlank() }?.let {
-            ProfileInfoLine(label = strings.username, value = it)
-        }
-        user.displayName?.takeIf { it.isNotBlank() && it != user.username }?.let {
-            ProfileInfoLine(label = strings.displayName, value = it)
-        }
+        Text(
+            text = strings.bio,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = user.bioText ?: strings.noBio,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
         url?.takeIf { it.isNotBlank() }?.let {
-            ProfileInfoLine(label = strings.homepage, value = compactUrl(it))
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(14.dp))
             OutlinedButton(
                 onClick = { Browser.open(context, it) },
                 modifier = Modifier.fillMaxWidth()
@@ -237,8 +241,12 @@ private fun ProfileSettingsDialog(
     var updateInfo by remember { mutableStateOf<AppUpdateInfo?>(null) }
     var showLogoutConfirm by remember { mutableStateOf(false) }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
+            modifier = Modifier.fillMaxWidth(0.74f),
             shape = RoundedCornerShape(22.dp),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 6.dp
@@ -310,6 +318,7 @@ private fun ProfileSettingsDialog(
                 Divider(modifier = Modifier.padding(vertical = 6.dp))
 
                 ClickRow(title = strings.logout) { showLogoutConfirm = true }
+                ClickRow(title = strings.close) { onDismiss() }
             }
         }
     }
@@ -408,29 +417,6 @@ private fun ClickRow(
             Spacer(Modifier.height(2.dp))
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-    }
-}
-
-@Composable
-private fun ProfileInfoLine(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(72.dp)
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
-        )
     }
 }
 
@@ -575,8 +561,3 @@ private fun RecentCover(item: ItemBrief, onClick: () -> Unit) {
         )
     }
 }
-
-private fun compactUrl(url: String): String =
-    url.removePrefix("https://")
-        .removePrefix("http://")
-        .trimEnd('/')

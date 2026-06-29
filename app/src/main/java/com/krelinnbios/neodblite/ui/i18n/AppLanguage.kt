@@ -137,7 +137,10 @@ data class AppStrings(
     val themeTealLight: String,
     val themeTealDark: String,
     val themeSakura: String,
-    val themePurple: String
+    val themePurple: String,
+    val close: String,
+    val bio: String,
+    val noBio: String
 ) {
     fun categoryLabel(category: Category?): String {
         val c = category ?: return ""
@@ -402,7 +405,7 @@ val ZH_HANS = AppStrings(
     appTagline = "NeoDB Lite · 非官方 NeoDB 客户端",
     logoutTitle = "退出登录",
     logoutMessage = "将清除本地保存的登录令牌，需要重新授权才能继续使用。",
-    logout = "退出",
+    logout = "退出账号",
     cancel = "取消",
     notLoggedIn = "未登录",
     newVersionPrefix = "发现新版本 v",
@@ -412,12 +415,15 @@ val ZH_HANS = AppStrings(
     downloadAndInstall = "下载并安装",
     goReleases = "前往 Releases",
     sourceLabelPrefix = "源",
-    feedback = "反馈",
+    feedback = "问题反馈",
     themeBlueBlack = "蓝黑",
     themeTealLight = "海青·浅",
     themeTealDark = "墨绿·深",
     themeSakura = "樱粉·浅",
-    themePurple = "暮紫·深"
+    themePurple = "暮紫·深",
+    close = "关闭",
+    bio = "个人简介",
+    noBio = "暂无简介"
 )
 
 val ZH_HANT = ZH_HANS.copy(
@@ -489,7 +495,7 @@ val ZH_HANT = ZH_HANS.copy(
     appTagline = "NeoDB Lite · 非官方 NeoDB 用戶端",
     logoutTitle = "登出",
     logoutMessage = "將清除本機儲存的登入令牌，需要重新授權才能繼續使用。",
-    logout = "登出",
+    logout = "登出帳號",
     cancel = "取消",
     notLoggedIn = "未登入",
     newVersionPrefix = "發現新版本 v",
@@ -499,12 +505,15 @@ val ZH_HANT = ZH_HANS.copy(
     downloadAndInstall = "下載並安裝",
     goReleases = "前往 Releases",
     sourceLabelPrefix = "來源",
-    feedback = "回饋",
+    feedback = "問題回饋",
     themeBlueBlack = "藍黑",
     themeTealLight = "海青·淺",
     themeTealDark = "墨綠·深",
     themeSakura = "櫻粉·淺",
-    themePurple = "暮紫·深"
+    themePurple = "暮紫·深",
+    close = "關閉",
+    bio = "個人簡介",
+    noBio = "暫無簡介"
 )
 
 val JA = ZH_HANS.copy(
@@ -587,12 +596,15 @@ val JA = ZH_HANS.copy(
     downloadAndInstall = "ダウンロードしてインストール",
     goReleases = "Releases へ",
     sourceLabelPrefix = "ソース",
-    feedback = "フィードバック",
+    feedback = "問題報告",
     themeBlueBlack = "ブルーブラック",
     themeTealLight = "ティール（明）",
     themeTealDark = "ディープグリーン",
     themeSakura = "さくら",
-    themePurple = "ミッドナイトパープル"
+    themePurple = "ミッドナイトパープル",
+    close = "閉じる",
+    bio = "自己紹介",
+    noBio = "自己紹介はありません"
 )
 
 val EN = ZH_HANS.copy(
@@ -665,7 +677,7 @@ val EN = ZH_HANS.copy(
     appTagline = "NeoDB Lite · Unofficial NeoDB client",
     logoutTitle = "Log out",
     logoutMessage = "This clears the saved login token. You will need to authorize again before continuing.",
-    logout = "Log out",
+    logout = "Sign out",
     cancel = "Cancel",
     notLoggedIn = "Not logged in",
     newVersionPrefix = "New version v",
@@ -675,12 +687,15 @@ val EN = ZH_HANS.copy(
     downloadAndInstall = "Download and install",
     goReleases = "Open Releases",
     sourceLabelPrefix = "Source",
-    feedback = "Feedback",
+    feedback = "Report an issue",
     themeBlueBlack = "Blue black",
     themeTealLight = "Teal light",
     themeTealDark = "Teal dark",
     themeSakura = "Sakura",
-    themePurple = "Midnight purple"
+    themePurple = "Midnight purple",
+    close = "Close",
+    bio = "Bio",
+    noBio = "No bio yet"
 )
 
 fun appStringsFor(language: AppLanguage): AppStrings = when (AppLanguage.resolve(language)) {

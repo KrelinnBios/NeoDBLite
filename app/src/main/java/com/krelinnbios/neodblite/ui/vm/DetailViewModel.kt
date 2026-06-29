@@ -2,6 +2,7 @@ package com.krelinnbios.neodblite.ui.vm
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.krelinnbios.neodblite.data.model.CommunityEntry
 import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.MarkInRequest
 import com.krelinnbios.neodblite.data.model.MarkSchema
@@ -21,6 +22,9 @@ class DetailViewModel : ViewModel() {
 
     private val _mark = MutableStateFlow<MarkSchema?>(null)
     val mark: StateFlow<MarkSchema?> = _mark.asStateFlow()
+
+    private val _community = MutableStateFlow<UiState<List<CommunityEntry>>?>(null)
+    val community: StateFlow<UiState<List<CommunityEntry>>?> = _community.asStateFlow()
 
     private val _saving = MutableStateFlow(false)
     val saving: StateFlow<Boolean> = _saving.asStateFlow()
@@ -43,6 +47,7 @@ class DetailViewModel : ViewModel() {
                 .onSuccess { item ->
                     _item.value = UiState.Success(item)
                     item.uuid?.let { loadMark(it) }
+                    loadCommunity(item)
                 }
                 .onFailure { _item.value = UiState.Error(it.friendlyMessage()) }
         }
@@ -51,6 +56,14 @@ class DetailViewModel : ViewModel() {
     private fun loadMark(uuid: String) {
         viewModelScope.launch {
             repo.mark(uuid).onSuccess { _mark.value = it }
+        }
+    }
+    private fun loadCommunity(item: ItemBrief) {
+        _community.value = UiState.Loading
+        viewModelScope.launch {
+            repo.itemCommunity(item, App.container.authStore.cachedHost)
+                .onSuccess { _community.value = UiState.Success(it) }
+                .onFailure { _community.value = UiState.Error(it.friendlyMessage()) }
         }
     }
 

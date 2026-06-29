@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 完整应用图标（矢量），深青底 + 白色数据库圆柱。API 24+ 可直接作为启动图标渲染。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#0F5C4E"
+        android:pathData="M0,0h108v108h-108z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,38 C34,33 44,30 54,30 C64,30 74,33 74,38 L74,70 C74,75 64,78 54,78 C44,78 34,75 34,70 Z" />
+    <path
+        android:fillColor="#0F5C4E"
+        android:pathData="M54,33 C45,33 37,35.5 37,38 C37,40.5 45,43 54,43 C63,43 71,40.5 71,38 C71,35.5 63,33 54,33 Z" />
+    <path
+        android:fillColor="#0F5C4E"
+        android:pathData="M37,53 C42,56 49,57 54,57 C59,57 66,56 71,53 L71,57 C66,60 59,61 54,61 C49,61 42,60 37,57 Z" />
+</vector>

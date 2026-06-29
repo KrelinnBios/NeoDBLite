@@ -1,0 +1,63 @@
+package com.krelinnbios.neodblite.data
+
+import com.krelinnbios.neodblite.data.model.Category
+import com.krelinnbios.neodblite.data.model.ItemBrief
+import com.krelinnbios.neodblite.data.model.MarkInRequest
+import com.krelinnbios.neodblite.data.model.MarkSchema
+import com.krelinnbios.neodblite.data.model.NeoUser
+import com.krelinnbios.neodblite.data.model.PagedMarks
+import com.krelinnbios.neodblite.data.model.SearchResult
+import com.krelinnbios.neodblite.data.model.ShelfType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.IOException
+
+/** 业务数据仓库：包装 [NeoDBApi]，统一在 IO 线程执行并返回 Result。 */
+class NeoDBRepository(private val client: NeoDBClient) {
+
+    private val api get() = client.api
+
+    suspend fun me(): Result<NeoUser> = io { api.me() }
+
+    suspend fun search(query: String, category: Category?, page: Int): Result<SearchResult> =
+        io { api.search(query, category?.apiValue, page) }
+
+    suspend fun trending(category: Category): Result<List<ItemBrief>> = io {
+        api.trending(category.trendingPath ?: category.apiValue)
+    }
+
+    /** 用条目的 api_url/url（相对 baseUrl）拉详情。 */
+    suspend fun item(path: String): Result<ItemBrief> = io {
+        api.itemByPath(path.removePrefix("/"))
+    }
+
+    suspend fun shelf(type: ShelfType, category: Category?, page: Int): Result<PagedMarks> =
+        io { api.shelf(type.apiValue, category?.apiValue, page) }
+
+    /** 查询某条目的当前标记；未标记（404）返回 null。 */
+    suspend fun mark(uuid: String): Result<MarkSchema?> = io {
+        val resp = api.getMark(uuid)
+        when {
+            resp.isSuccessful -> resp.body()
+            resp.code() == 404 -> null
+            else -> throw IOException("读取标记失败：HTTP ${resp.code()}")
+        }
+    }
+
+    suspend fun postMark(uuid: String, body: MarkInRequest): Result<Unit> = io {
+        val resp = api.postMark(uuid, body)
+        if (!resp.isSuccessful) throw IOException("保存标记失败：HTTP ${resp.code()}")
+        Unit
+    }
+
+    suspend fun deleteMark(uuid: String): Result<Unit> = io {
+        val resp = api.deleteMark(uuid)
+        if (!resp.isSuccessful && resp.code() != 404) {
+            throw IOException("删除标记失败：HTTP ${resp.code()}")
+        }
+        Unit
+    }
+
+    private suspend inline fun <T> io(crossinline block: suspend () -> T): Result<T> =
+        withContext(Dispatchers.IO) { runCatching { block() } }
+}

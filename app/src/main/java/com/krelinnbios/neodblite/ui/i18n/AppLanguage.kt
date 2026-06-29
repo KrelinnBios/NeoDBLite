@@ -132,15 +132,16 @@ data class AppStrings(
     val goReleases: String,
     val sourceLabelPrefix: String
 ) {
-    fun categoryLabel(category: Category): String = when (this) {
-        ZH_HANS -> category.zhHans
-        ZH_HANT -> category.zhHant
-        JA -> category.ja
-        EN -> category.en
-        else -> category.zhHans
+    fun categoryLabel(category: Category?): String {
+        val c = category ?: return ""
+        return when (this) {
+            ZH_HANS -> c.zhHans
+            ZH_HANT -> c.zhHant
+            JA -> c.ja
+            EN -> c.en
+            else -> c.zhHans
+        }
     }
-
-    fun categoryLabel(category: Category?): String = category?.let { categoryLabel(it) }.orEmpty()
 
     fun shelfLabel(shelf: ShelfType, category: Category?): String = when (this) {
         ZH_HANS -> shelfLabelZhHans(shelf, category)

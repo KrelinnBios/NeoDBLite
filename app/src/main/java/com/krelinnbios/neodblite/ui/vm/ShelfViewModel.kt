@@ -3,6 +3,7 @@ package com.krelinnbios.neodblite.ui.vm
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.krelinnbios.neodblite.data.model.Category
+import com.krelinnbios.neodblite.data.model.MarkInRequest
 import com.krelinnbios.neodblite.data.model.MarkSchema
 import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.global.App
@@ -35,11 +36,13 @@ class ShelfViewModel : ViewModel() {
     private val _refreshing = MutableStateFlow(false)
     val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
 
+    private val _toast = MutableStateFlow<String?>(null)
+    val toast: StateFlow<String?> = _toast.asStateFlow()
+
     init {
         reload()
     }
 
-    /** 下拉刷新：从第一页重新拉取，但保留旧列表直到成功，避免闪烁。 */
     fun refresh() {
         if (_refreshing.value) return
         _refreshing.value = true
@@ -97,6 +100,34 @@ class ShelfViewModel : ViewModel() {
                 }
             _loadingMore.value = false
         }
+    }
+
+    fun saveMark(uuid: String, request: MarkInRequest) {
+        if (uuid.isBlank()) return
+        viewModelScope.launch {
+            repo.postMark(uuid, request)
+                .onSuccess {
+                    _toast.value = "已保存"
+                    reload()
+                }
+                .onFailure { _toast.value = it.friendlyMessage() }
+        }
+    }
+
+    fun deleteMark(uuid: String) {
+        if (uuid.isBlank()) return
+        viewModelScope.launch {
+            repo.deleteMark(uuid)
+                .onSuccess {
+                    _toast.value = "已删除标记"
+                    reload()
+                }
+                .onFailure { _toast.value = it.friendlyMessage() }
+        }
+    }
+
+    fun consumeToast() {
+        _toast.value = null
     }
 
     val canLoadMore: Boolean get() = page < pages

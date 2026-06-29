@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -272,7 +273,7 @@ private fun ProfileSettingsDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
-            modifier = Modifier.fillMaxWidth(0.74f),
+            modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth(0.88f),
             shape = RoundedCornerShape(22.dp),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 6.dp
@@ -291,7 +292,7 @@ private fun ProfileSettingsDialog(
                 ) { dismiss ->
                     AppLanguage.entries.forEach { lang ->
                         DropdownMenuItem(
-                            text = { Text(strings.languageLabel(lang)) },
+                            text = { Text(strings.languageLabel(lang), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             onClick = { onLanguageChange(lang); dismiss() }
                         )
                     }
@@ -308,7 +309,7 @@ private fun ProfileSettingsDialog(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     ColorDot(theme.scheme.primary)
                                     Spacer(Modifier.width(8.dp))
-                                    Text(strings.themeLabel(theme))
+                                    Text(strings.themeLabel(theme), maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                             },
                             onClick = { onThemeChange(theme); dismiss() }
@@ -401,6 +402,8 @@ private fun SettingDropdownRow(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
         Box {
@@ -411,7 +414,8 @@ private fun SettingDropdownRow(
                     text = valueLabel,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Icon(
                     imageVector = Icons.Filled.ArrowDropDown,

@@ -17,11 +17,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.StarHalf
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -152,15 +154,37 @@ fun ItemGridCard(item: ItemBrief, onClick: () -> Unit, modifier: Modifier = Modi
 
 /** 书架行：在条目行下方补一行「我的评分 + 短评」。 */
 @Composable
-fun MarkRow(mark: MarkSchema, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun MarkRow(
+    mark: MarkSchema,
+    onClick: () -> Unit,
+    onEdit: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
     val item = mark.item ?: return
+    val strings = LocalAppStrings.current
     Column(modifier = modifier) {
-        ItemRow(item = item, onClick = onClick)
+        val editAction = onEdit
+        val trailingContent: (@Composable () -> Unit)? = if (editAction != null) {
+            {
+                IconButton(onClick = editAction) {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = strings.editMark,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        } else null
+        ItemRow(
+            item = item,
+            onClick = onClick,
+            trailing = trailingContent
+        )
         val grade = mark.ratingGrade?.takeIf { it > 0 }
         val comment = mark.commentText?.takeIf { it.isNotBlank() }
         if (grade != null || comment != null) {
             val mine = buildString {
-                if (grade != null) append("${LocalAppStrings.current.myRating} $grade/10")
+                if (grade != null) append("${strings.myRating} $grade/10")
                 if (comment != null) {
                     if (isNotEmpty()) append(" · ")
                     append(comment)
@@ -177,10 +201,14 @@ fun MarkRow(mark: MarkSchema, onClick: () -> Unit, modifier: Modifier = Modifier
         }
     }
 }
-
 /** 列表/网格中通用的条目行：封面 + 标题 + 副标题 + 评分。 */
 @Composable
-fun ItemRow(item: ItemBrief, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ItemRow(
+    item: ItemBrief,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    trailing: (@Composable () -> Unit)? = null
+) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -229,6 +257,12 @@ fun ItemRow(item: ItemBrief, onClick: () -> Unit, modifier: Modifier = Modifier)
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        }
+        if (trailing != null) {
+            Spacer(Modifier.width(8.dp))
+            Box(modifier = Modifier.align(Alignment.CenterVertically)) {
+                trailing()
             }
         }
     }

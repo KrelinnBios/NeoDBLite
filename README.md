@@ -1,6 +1,7 @@
 # NeoDBLite
 
 <p align="center">
+  <img src="docs/icon.svg" alt="NeoDB Lite icon" width="96" height="96"><br>
   <strong>NeoDB Lite</strong><br>
   面向 NeoDB 与兼容实例的非官方 Android 标记客户端
 </p>

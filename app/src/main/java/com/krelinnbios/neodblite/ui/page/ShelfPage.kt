@@ -29,12 +29,12 @@ import androidx.compose.ui.unit.dp
 import com.krelinnbios.neodblite.data.model.Category
 import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.ShelfType
-import com.krelinnbios.neodblite.data.model.shelfLabel
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.component.EmptyBox
 import com.krelinnbios.neodblite.ui.component.ErrorBox
 import com.krelinnbios.neodblite.ui.component.LoadingBox
 import com.krelinnbios.neodblite.ui.component.MarkRow
+import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.ui.vm.ShelfViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,6 +43,7 @@ fun ShelfPage(
     shelfVM: ShelfViewModel,
     onOpenItem: (ItemBrief) -> Unit
 ) {
+    val strings = LocalAppStrings.current
     val shelfType by shelfVM.shelfType.collectAsState()
     val category by shelfVM.category.collectAsState()
     val state by shelfVM.state.collectAsState()
@@ -57,7 +58,7 @@ fun ShelfPage(
                 Tab(
                     selected = type == shelfType,
                     onClick = { shelfVM.selectShelf(type) },
-                    text = { Text(shelfLabel(type, category)) }
+                    text = { Text(strings.shelfLabel(type, category)) }
                 )
             }
         }
@@ -70,14 +71,14 @@ fun ShelfPage(
                 FilterChip(
                     selected = category == null,
                     onClick = { shelfVM.selectCategory(null) },
-                    label = { Text("全部") }
+                    label = { Text(strings.all) }
                 )
             }
             items(Category.entries) { cat ->
                 FilterChip(
                     selected = cat == category,
                     onClick = { shelfVM.selectCategory(cat) },
-                    label = { Text(cat.label) }
+                    label = { Text(strings.categoryLabel(cat)) }
                 )
             }
         }
@@ -88,7 +89,7 @@ fun ShelfPage(
                 is UiState.Error -> ErrorBox(s.message, onRetry = { shelfVM.reload() })
                 is UiState.Success -> {
                     if (s.data.isEmpty()) {
-                        EmptyBox("这个书架还没有内容")
+                        EmptyBox(strings.noContent)
                     } else {
                         val listState = rememberLazyListState()
                         val shouldLoadMore by remember {
@@ -120,7 +121,7 @@ fun ShelfPage(
                                             modifier = Modifier.fillMaxWidth().padding(16.dp),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Text("加载中…", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(strings.loadingMore, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                     }
                                 }

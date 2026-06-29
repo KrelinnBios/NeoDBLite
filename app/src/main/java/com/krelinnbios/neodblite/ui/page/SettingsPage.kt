@@ -3,7 +3,10 @@ package com.krelinnbios.neodblite.ui.page
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,9 +15,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,11 +35,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.krelinnbios.neodblite.BuildConfig
 import com.krelinnbios.neodblite.data.model.NeoUser
 import com.krelinnbios.neodblite.ui.component.AppUpdateDialog
+import com.krelinnbios.neodblite.ui.theme.AppTheme
 import com.krelinnbios.neodblite.util.AppUpdateCheckResult
 import com.krelinnbios.neodblite.util.AppUpdateInfo
 import com.krelinnbios.neodblite.util.AppUpdateManager
@@ -43,6 +51,8 @@ import kotlinx.coroutines.launch
 fun SettingsPage(
     user: NeoUser?,
     host: String,
+    currentTheme: AppTheme,
+    onThemeChange: (AppTheme) -> Unit,
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
@@ -52,7 +62,16 @@ fun SettingsPage(
     var showLogoutConfirm by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize().padding(vertical = 8.dp)) {
-        AccountHeader(user = user, host = host)
+        AccountHeader(
+            user = user,
+            host = host,
+            onLogout = { showLogoutConfirm = true }
+        )
+        Divider()
+        ThemeSection(
+            currentTheme = currentTheme,
+            onThemeChange = onThemeChange
+        )
         Divider()
         SettingRow(
             title = "检查更新",
@@ -76,12 +95,6 @@ fun SettingsPage(
             title = "Releases 页面",
             subtitle = "在浏览器中查看历史版本",
             onClick = { AppUpdateManager.openReleasesPage(context) }
-        )
-        Divider()
-        SettingRow(
-            title = "退出登录",
-            subtitle = "清除本地令牌",
-            onClick = { showLogoutConfirm = true }
         )
 
         Spacer(Modifier.height(24.dp))
@@ -118,7 +131,8 @@ fun SettingsPage(
 @Composable
 private fun AccountHeader(
     user: NeoUser?,
-    host: String
+    host: String,
+    onLogout: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -146,18 +160,64 @@ private fun AccountHeader(
             )
         }
         Spacer(Modifier.width(14.dp))
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = user?.bestName ?: "未登录",
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Spacer(Modifier.height(2.dp))
             Text(
                 text = user?.externalAcct?.takeIf { it.isNotBlank() } ?: host,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
+        }
+        TextButton(onClick = onLogout) {
+            Text("退出")
+        }
+    }
+}
+
+@Composable
+private fun ThemeSection(
+    currentTheme: AppTheme,
+    onThemeChange: (AppTheme) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+        Text(
+            text = "主题颜色",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+        Spacer(Modifier.height(8.dp))
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(AppTheme.entries) { theme ->
+                FilterChip(
+                    selected = theme == currentTheme,
+                    onClick = { onThemeChange(theme) },
+                    label = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .clip(CircleShape)
+                                    .background(theme.scheme.primary)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(theme.label)
+                        }
+                    }
+                )
+            }
         }
     }
 }

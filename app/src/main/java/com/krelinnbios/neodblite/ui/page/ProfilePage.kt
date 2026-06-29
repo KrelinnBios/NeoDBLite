@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -93,7 +94,14 @@ fun ProfilePage(
     val state by profileVM.state.collectAsState()
     val refreshing by profileVM.refreshing.collectAsState()
     var showSettings by remember { mutableStateOf(false) }
+    val profileBio = when (val s = state) {
+        is UiState.Success -> s.data.bio ?: user.bioText
+        else -> user.bioText
+    }
 
+    LaunchedEffect(user.url, user.username, user.externalAcct, host) {
+        profileVM.bind(user, host)
+    }
     PullToRefreshBox(
         isRefreshing = refreshing,
         onRefresh = { profileVM.refresh() },
@@ -103,7 +111,7 @@ fun ProfilePage(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
-            item { ProfileHeader(user = user, host = host, onOpenSettings = { showSettings = true }) }
+            item { ProfileHeader(user = user, host = host, bio = profileBio, onOpenSettings = { showSettings = true }) }
 
             when (val s = state) {
                 is UiState.Loading -> item {
@@ -148,6 +156,7 @@ fun ProfilePage(
 private fun ProfileHeader(
     user: NeoUser,
     host: String,
+    bio: String?,
     onOpenSettings: () -> Unit
 ) {
     val strings = LocalAppStrings.current
@@ -209,7 +218,7 @@ private fun ProfileHeader(
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = user.bioText ?: strings.noBio,
+            text = bio?.takeIf { it.isNotBlank() } ?: strings.noBio,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface
         )

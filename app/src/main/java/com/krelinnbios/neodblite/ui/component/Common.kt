@@ -34,8 +34,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.krelinnbios.neodblite.data.model.Category
 import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.MarkSchema
+import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.ui.theme.ratingStar
 import com.krelinnbios.neodblite.util.Format
 
@@ -57,7 +59,7 @@ fun ErrorBox(message: String, onRetry: (() -> Unit)? = null, modifier: Modifier 
             )
             if (onRetry != null) {
                 Spacer(Modifier.height(12.dp))
-                Button(onClick = onRetry) { Text("重试") }
+                Button(onClick = onRetry) { Text(LocalAppStrings.current.retry) }
             }
         }
     }
@@ -158,7 +160,7 @@ fun MarkRow(mark: MarkSchema, onClick: () -> Unit, modifier: Modifier = Modifier
         val comment = mark.commentText?.takeIf { it.isNotBlank() }
         if (grade != null || comment != null) {
             val mine = buildString {
-                if (grade != null) append("我的评分 $grade/10")
+                if (grade != null) append("${LocalAppStrings.current.myRating} $grade/10")
                 if (comment != null) {
                     if (isNotEmpty()) append(" · ")
                     append(comment)
@@ -211,7 +213,7 @@ fun ItemRow(item: ItemBrief, onClick: () -> Unit, modifier: Modifier = Modifier)
             }
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                val cat = Format.categoryLabel(item)
+                val cat = Category.fromApi(item.category ?: item.type)?.let { LocalAppStrings.current.categoryLabel(it) }.orEmpty()
                 if (cat.isNotBlank()) {
                     Text(
                         text = cat,
@@ -223,7 +225,7 @@ fun ItemRow(item: ItemBrief, onClick: () -> Unit, modifier: Modifier = Modifier)
                 RatingStars(rating = item.rating)
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    text = Format.ratingText(item.rating),
+                    text = if (item.rating == null || item.rating <= 0.0) LocalAppStrings.current.noRating else Format.ratingText(item.rating),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

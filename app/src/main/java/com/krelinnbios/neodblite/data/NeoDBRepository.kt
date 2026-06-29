@@ -1,6 +1,8 @@
 package com.krelinnbios.neodblite.data
 
 import com.krelinnbios.neodblite.data.model.Category
+import com.krelinnbios.neodblite.data.model.CommunityEntry
+import com.krelinnbios.neodblite.data.model.CommunityEntryType
 import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.MarkInRequest
 import com.krelinnbios.neodblite.data.model.MarkSchema
@@ -10,6 +12,7 @@ import com.krelinnbios.neodblite.data.model.SearchResult
 import com.krelinnbios.neodblite.data.model.ShelfType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.krelinnbios.neodblite.util.CommunityHtmlParser
 import java.io.IOException
 
 /** 业务数据仓库：包装 [NeoDBApi]，统一在 IO 线程执行并返回 Result。 */
@@ -29,6 +32,26 @@ class NeoDBRepository(private val client: NeoDBClient) {
     /** 用条目的 api_url/url（相对 baseUrl）拉详情。 */
     suspend fun item(path: String): Result<ItemBrief> = io {
         api.itemByPath(path.removePrefix("/"))
+    }
+    suspend fun itemCommunity(item: ItemBrief, host: String): Result<List<CommunityEntry>> = io {
+        val path = item.url?.takeIf { it.isNotBlank() }
+            ?: item.id?.takeIf { it.startsWith("http", ignoreCase = true) }
+                ?.substringAfter(host, missingDelimiterValue = "")
+        val normalized = path?.removePrefix("/")?.substringBefore('?')?.trimEnd('/').orEmpty()
+        if (normalized.isBlank()) {
+            emptyList()
+        } else {
+            listOf(
+                CommunityEntryType.COMMENT to "comments",
+                CommunityEntryType.REVIEW to "reviews",
+                CommunityEntryType.NOTE to "notes"
+            ).flatMap { (type, suffix) ->
+                runCatching {
+                    val html = api.htmlFragment("$normalized/$suffix").string()
+                    CommunityHtmlParser.parse(type, html, host)
+                }.getOrElse { emptyList() }
+            }
+        }
     }
 
     suspend fun shelf(type: ShelfType, category: Category?, page: Int): Result<PagedMarks> =

@@ -61,6 +61,7 @@ import com.krelinnbios.neodblite.ui.component.ErrorBox
 import com.krelinnbios.neodblite.ui.component.ItemGridCard
 import com.krelinnbios.neodblite.ui.component.ItemRow
 import com.krelinnbios.neodblite.ui.component.LoadingBox
+import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.ui.vm.DiscoverViewModel
 import com.krelinnbios.neodblite.ui.vm.SearchViewModel
 
@@ -71,6 +72,7 @@ fun DiscoverPage(
     searchVM: SearchViewModel,
     onOpenItem: (ItemBrief) -> Unit
 ) {
+    val strings = LocalAppStrings.current
     val category by discoverVM.category.collectAsState()
     val state by discoverVM.state.collectAsState()
     val refreshing by discoverVM.refreshing.collectAsState()
@@ -116,7 +118,7 @@ fun DiscoverPage(
                     FilterChip(
                         selected = cat == category,
                         onClick = { discoverVM.selectCategory(cat) },
-                        label = { Text(cat.label) }
+                        label = { Text(strings.categoryLabel(cat)) }
                     )
                 }
             }
@@ -132,7 +134,7 @@ fun DiscoverPage(
                             modifier = Modifier.fillMaxSize()
                         ) {
                             if (s.data.isEmpty()) {
-                                EmptyBox("暂无内容")
+                                EmptyBox(strings.noContent)
                             } else {
                                 LazyVerticalGrid(
                                     columns = GridCells.Fixed(3),
@@ -164,7 +166,8 @@ private fun SearchBar(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val label = category?.label ?: "全部"
+    val strings = LocalAppStrings.current
+    val label = category?.let { strings.categoryLabel(it) } ?: strings.all
 
     Surface(
         modifier = modifier.fillMaxWidth().height(54.dp),
@@ -193,13 +196,13 @@ private fun SearchBar(
                     )
                     Icon(
                         imageVector = Icons.Filled.ArrowDropDown,
-                        contentDescription = "选择搜索范围",
+                        contentDescription = strings.searchScope,
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     SearchCategoryItem(
-                        label = "全部",
+                        label = strings.all,
                         selected = category == null,
                         onClick = {
                             expanded = false
@@ -208,7 +211,7 @@ private fun SearchBar(
                     )
                     Category.entries.forEach { cat ->
                         SearchCategoryItem(
-                            label = cat.label,
+                            label = strings.categoryLabel(cat),
                             selected = cat == category,
                             onClick = {
                                 expanded = false
@@ -239,7 +242,7 @@ private fun SearchBar(
                     ) {
                         if (query.isBlank()) {
                             Text(
-                                text = "输入名字搜索",
+                                text = strings.searchPlaceholder,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -252,7 +255,7 @@ private fun SearchBar(
             IconButton(onClick = onSubmit) {
                 Icon(
                     imageVector = Icons.Filled.Search,
-                    contentDescription = "搜索",
+                    contentDescription = strings.search,
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -291,13 +294,13 @@ private fun SearchResultContent(
 ) {
     Box(modifier = modifier) {
         when (state) {
-            null -> EmptyBox("按搜索键开始搜索")
+            null -> EmptyBox(LocalAppStrings.current.searchToStart)
             is UiState.Loading -> LoadingBox()
             is UiState.Error -> ErrorBox(state.message, onRetry = onRetry)
             is UiState.Success -> {
                 val results = state.data
                 if (results.isEmpty()) {
-                    EmptyBox("没有找到相关条目")
+                    EmptyBox(LocalAppStrings.current.noSearchResults)
                 } else {
                     val listState = rememberLazyListState()
                     val shouldLoadMore by remember {
@@ -326,7 +329,7 @@ private fun SearchResultContent(
                                         modifier = Modifier.fillMaxWidth().padding(16.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("加载中…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(LocalAppStrings.current.loadingMore, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                             }

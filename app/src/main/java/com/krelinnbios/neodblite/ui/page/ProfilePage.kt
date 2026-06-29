@@ -1,5 +1,6 @@
 package com.krelinnbios.neodblite.ui.page
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,34 +20,60 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
+import com.krelinnbios.neodblite.BuildConfig
 import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.NeoUser
 import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.ui.UiState
-import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
+import com.krelinnbios.neodblite.ui.component.AppUpdateDialog
 import com.krelinnbios.neodblite.ui.component.CoverImage
 import com.krelinnbios.neodblite.ui.component.EmptyBox
 import com.krelinnbios.neodblite.ui.component.ErrorBox
 import com.krelinnbios.neodblite.ui.component.LoadingBox
+import com.krelinnbios.neodblite.ui.i18n.AppLanguage
+import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
+import com.krelinnbios.neodblite.ui.theme.AppTheme
 import com.krelinnbios.neodblite.ui.vm.ProfileViewModel
+import com.krelinnbios.neodblite.util.AppUpdateCheckResult
+import com.krelinnbios.neodblite.util.AppUpdateInfo
+import com.krelinnbios.neodblite.util.AppUpdateManager
 import com.krelinnbios.neodblite.util.Browser
+import kotlinx.coroutines.launch
+
+private const val FEEDBACK_URL = "https://github.com/KrelinnBios/NeoDBLite/issues"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,10 +82,16 @@ fun ProfilePage(
     host: String,
     profileVM: ProfileViewModel,
     onOpenItem: (ItemBrief) -> Unit,
-    onOpenShelf: (ShelfType) -> Unit
+    onOpenShelf: (ShelfType) -> Unit,
+    currentTheme: AppTheme,
+    onThemeChange: (AppTheme) -> Unit,
+    currentLanguage: AppLanguage,
+    onLanguageChange: (AppLanguage) -> Unit,
+    onLogout: () -> Unit
 ) {
     val state by profileVM.state.collectAsState()
     val refreshing by profileVM.refreshing.collectAsState()
+    var showSettings by remember { mutableStateOf(false) }
 
     PullToRefreshBox(
         isRefreshing = refreshing,
@@ -69,7 +102,7 @@ fun ProfilePage(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
-            item { ProfileHeader(user = user, host = host) }
+            item { ProfileHeader(user = user, host = host, onOpenSettings = { showSettings = true }) }
 
             when (val s = state) {
                 is UiState.Loading -> item {
@@ -97,10 +130,26 @@ fun ProfilePage(
             }
         }
     }
+
+    if (showSettings) {
+        ProfileSettingsDialog(
+            currentTheme = currentTheme,
+            onThemeChange = onThemeChange,
+            currentLanguage = currentLanguage,
+            onLanguageChange = onLanguageChange,
+            onLogout = onLogout,
+            onDismiss = { showSettings = false }
+        )
+    }
 }
 
 @Composable
-private fun ProfileHeader(user: NeoUser, host: String) {
+private fun ProfileHeader(
+    user: NeoUser,
+    host: String,
+    onOpenSettings: () -> Unit
+) {
+    val strings = LocalAppStrings.current
     val context = LocalContext.current
     val url = user.url
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
@@ -142,25 +191,222 @@ private fun ProfileHeader(user: NeoUser, host: String) {
                     overflow = TextOverflow.Ellipsis
                 )
             }
+            IconButton(onClick = onOpenSettings) {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = strings.navSettings,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
 
         Spacer(Modifier.height(16.dp))
-        ProfileInfoLine(label = LocalAppStrings.current.instanceHost, value = host)
+        ProfileInfoLine(label = strings.instanceHost, value = host)
         user.username?.takeIf { it.isNotBlank() }?.let {
-            ProfileInfoLine(label = LocalAppStrings.current.username, value = it)
+            ProfileInfoLine(label = strings.username, value = it)
         }
         user.displayName?.takeIf { it.isNotBlank() && it != user.username }?.let {
-            ProfileInfoLine(label = LocalAppStrings.current.displayName, value = it)
+            ProfileInfoLine(label = strings.displayName, value = it)
         }
         url?.takeIf { it.isNotBlank() }?.let {
-            ProfileInfoLine(label = LocalAppStrings.current.homepage, value = compactUrl(it))
+            ProfileInfoLine(label = strings.homepage, value = compactUrl(it))
             Spacer(Modifier.height(12.dp))
             OutlinedButton(
                 onClick = { Browser.open(context, it) },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(LocalAppStrings.current.openHomepage)
+                Text(strings.openHomepage)
             }
+        }
+    }
+}
+
+@Composable
+private fun ProfileSettingsDialog(
+    currentTheme: AppTheme,
+    onThemeChange: (AppTheme) -> Unit,
+    currentLanguage: AppLanguage,
+    onLanguageChange: (AppLanguage) -> Unit,
+    onLogout: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val strings = LocalAppStrings.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var checking by remember { mutableStateOf(false) }
+    var updateInfo by remember { mutableStateOf<AppUpdateInfo?>(null) }
+    var showLogoutConfirm by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(22.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
+                Text(
+                    text = strings.navSettings,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(8.dp))
+
+                SettingDropdownRow(
+                    label = strings.language,
+                    valueLabel = strings.languageLabel(currentLanguage)
+                ) { dismiss ->
+                    AppLanguage.entries.forEach { lang ->
+                        DropdownMenuItem(
+                            text = { Text(strings.languageLabel(lang)) },
+                            onClick = { onLanguageChange(lang); dismiss() }
+                        )
+                    }
+                }
+
+                SettingDropdownRow(
+                    label = strings.themeColor,
+                    valueLabel = strings.themeLabel(currentTheme),
+                    valueLeading = { ColorDot(currentTheme.scheme.primary) }
+                ) { dismiss ->
+                    AppTheme.entries.forEach { theme ->
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    ColorDot(theme.scheme.primary)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(strings.themeLabel(theme))
+                                }
+                            },
+                            onClick = { onThemeChange(theme); dismiss() }
+                        )
+                    }
+                }
+
+                Divider(modifier = Modifier.padding(vertical = 6.dp))
+
+                ClickRow(
+                    title = strings.checkUpdate,
+                    subtitle = if (checking) strings.checking
+                    else "${strings.currentVersionPrefix}${BuildConfig.VERSION_NAME}"
+                ) {
+                    if (checking) return@ClickRow
+                    checking = true
+                    scope.launch {
+                        when (val result = AppUpdateManager.checkForUpdate()) {
+                            AppUpdateCheckResult.NoUpdate ->
+                                Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
+                            is AppUpdateCheckResult.UpdateAvailable -> updateInfo = result.info
+                            is AppUpdateCheckResult.Failed ->
+                                Toast.makeText(context, result.reason, Toast.LENGTH_LONG).show()
+                        }
+                        checking = false
+                    }
+                }
+
+                ClickRow(title = strings.feedback) {
+                    Browser.open(context, FEEDBACK_URL)
+                }
+
+                Divider(modifier = Modifier.padding(vertical = 6.dp))
+
+                ClickRow(title = strings.logout) { showLogoutConfirm = true }
+            }
+        }
+    }
+
+    updateInfo?.let { info ->
+        AppUpdateDialog(info = info, onDismiss = { updateInfo = null })
+    }
+
+    if (showLogoutConfirm) {
+        AlertDialog(
+            onDismissRequest = { showLogoutConfirm = false },
+            title = { Text(strings.logoutTitle) },
+            text = { Text(strings.logoutMessage) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLogoutConfirm = false
+                    onDismiss()
+                    onLogout()
+                }) { Text(strings.logout) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutConfirm = false }) { Text(strings.cancel) }
+            }
+        )
+    }
+}
+
+@Composable
+private fun ColorDot(color: Color) {
+    Box(
+        modifier = Modifier
+            .size(14.dp)
+            .clip(CircleShape)
+            .background(color)
+    )
+}
+
+@Composable
+private fun SettingDropdownRow(
+    label: String,
+    valueLabel: String,
+    valueLeading: (@Composable () -> Unit)? = null,
+    menuContent: @Composable (dismiss: () -> Unit) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { expanded = true }
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        Box {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                valueLeading?.invoke()
+                if (valueLeading != null) Spacer(Modifier.width(6.dp))
+                Text(
+                    text = valueLabel,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1
+                )
+                Icon(
+                    imageVector = Icons.Filled.ArrowDropDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                menuContent { expanded = false }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ClickRow(
+    title: String,
+    subtitle: String? = null,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp)
+    ) {
+        Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+        if (subtitle != null) {
+            Spacer(Modifier.height(2.dp))
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

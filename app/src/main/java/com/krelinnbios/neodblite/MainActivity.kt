@@ -11,7 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -50,7 +49,6 @@ import com.krelinnbios.neodblite.ui.page.DiscoverPage
 import com.krelinnbios.neodblite.ui.page.ItemDetailPage
 import com.krelinnbios.neodblite.ui.page.LoginPage
 import com.krelinnbios.neodblite.ui.page.ProfilePage
-import com.krelinnbios.neodblite.ui.page.SettingsPage
 import com.krelinnbios.neodblite.ui.page.ShelfPage
 import com.krelinnbios.neodblite.ui.theme.AppTheme
 import com.krelinnbios.neodblite.ui.theme.AppThemePreference
@@ -128,15 +126,13 @@ private data class BottomDestination(
 private val bottomDestinations = listOf(
     BottomDestination("discover", Icons.Filled.Home),
     BottomDestination("shelf", Icons.AutoMirrored.Filled.List),
-    BottomDestination("profile", Icons.Filled.Person),
-    BottomDestination("settings", Icons.Filled.Settings)
+    BottomDestination("profile", Icons.Filled.Person)
 )
 
 private fun bottomLabel(route: String, strings: AppStrings): String = when (route) {
     "discover" -> strings.navDiscover
     "shelf" -> strings.navShelf
     "profile" -> strings.navProfile
-    "settings" -> strings.navSettings
     else -> route
 }
 
@@ -269,13 +265,7 @@ private fun MainScaffold(
                     host = authVM.currentHost,
                     profileVM = profileVM,
                     onOpenItem = openItem,
-                    onOpenShelf = openShelf
-                )
-            }
-            composable("settings") {
-                SettingsPage(
-                    user = userName,
-                    host = authVM.currentHost,
+                    onOpenShelf = openShelf,
                     currentTheme = currentTheme,
                     onThemeChange = onThemeChange,
                     currentLanguage = currentLanguage,

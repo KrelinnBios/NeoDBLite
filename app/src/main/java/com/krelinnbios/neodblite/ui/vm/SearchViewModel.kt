@@ -56,6 +56,12 @@ class SearchViewModel : ViewModel() {
 
     fun onQueryChange(value: String) {
         _query.value = value
+        if (value.isBlank()) {
+            page = 1
+            pages = 1
+            accumulated.clear()
+            _state.value = null
+        }
     }
 
     fun selectCategory(category: Category?) {

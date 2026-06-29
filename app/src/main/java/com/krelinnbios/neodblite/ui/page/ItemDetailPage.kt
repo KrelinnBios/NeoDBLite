@@ -348,7 +348,7 @@ private fun CommunitySection(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                entries.take(5).forEach { entry ->
+                entries.forEach { entry ->
                     CommunityEntryCard(entry = entry)
                     Spacer(Modifier.height(8.dp))
                 }

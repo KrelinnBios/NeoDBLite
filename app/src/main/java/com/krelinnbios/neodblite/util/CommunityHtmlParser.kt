@@ -18,7 +18,7 @@ object CommunityHtmlParser {
         if (html.isBlank() || html.contains("class=\"empty\"") || html.contains("class='empty'")) return emptyList()
         return sectionRegex.findAll(html)
             .mapNotNull { parseSection(type, it.value, host) }
-            .take(8)
+            .take(60)
             .toList()
     }
 

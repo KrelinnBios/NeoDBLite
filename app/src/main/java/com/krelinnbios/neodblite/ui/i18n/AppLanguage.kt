@@ -2,6 +2,7 @@ package com.krelinnbios.neodblite.ui.i18n
 
 import android.content.Context
 import androidx.compose.runtime.staticCompositionLocalOf
+import com.krelinnbios.neodblite.ui.theme.AppTheme
 import com.krelinnbios.neodblite.data.model.Category
 import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.data.model.Visibility
@@ -130,7 +131,13 @@ data class AppStrings(
     val downloading: String,
     val downloadAndInstall: String,
     val goReleases: String,
-    val sourceLabelPrefix: String
+    val sourceLabelPrefix: String,
+    val feedback: String,
+    val themeBlueBlack: String,
+    val themeTealLight: String,
+    val themeTealDark: String,
+    val themeSakura: String,
+    val themePurple: String
 ) {
     fun categoryLabel(category: Category?): String {
         val c = category ?: return ""
@@ -165,6 +172,14 @@ data class AppStrings(
         AppLanguage.ZH_HANT -> "繁體中文"
         AppLanguage.JA -> "日本語"
         AppLanguage.EN -> "English"
+    }
+
+    fun themeLabel(theme: AppTheme): String = when (theme) {
+        AppTheme.BLUE_BLACK -> themeBlueBlack
+        AppTheme.TEAL_LIGHT -> themeTealLight
+        AppTheme.TEAL_DARK -> themeTealDark
+        AppTheme.SAKURA -> themeSakura
+        AppTheme.MIDNIGHT_PURPLE -> themePurple
     }
 
     val languageSystem: String
@@ -396,7 +411,13 @@ val ZH_HANS = AppStrings(
     downloading = "下载中…",
     downloadAndInstall = "下载并安装",
     goReleases = "前往 Releases",
-    sourceLabelPrefix = "源"
+    sourceLabelPrefix = "源",
+    feedback = "反馈",
+    themeBlueBlack = "蓝黑",
+    themeTealLight = "海青·浅",
+    themeTealDark = "墨绿·深",
+    themeSakura = "樱粉·浅",
+    themePurple = "暮紫·深"
 )
 
 val ZH_HANT = ZH_HANS.copy(
@@ -477,7 +498,13 @@ val ZH_HANT = ZH_HANS.copy(
     downloading = "下載中…",
     downloadAndInstall = "下載並安裝",
     goReleases = "前往 Releases",
-    sourceLabelPrefix = "來源"
+    sourceLabelPrefix = "來源",
+    feedback = "回饋",
+    themeBlueBlack = "藍黑",
+    themeTealLight = "海青·淺",
+    themeTealDark = "墨綠·深",
+    themeSakura = "櫻粉·淺",
+    themePurple = "暮紫·深"
 )
 
 val JA = ZH_HANS.copy(
@@ -559,7 +586,13 @@ val JA = ZH_HANS.copy(
     downloading = "ダウンロード中…",
     downloadAndInstall = "ダウンロードしてインストール",
     goReleases = "Releases へ",
-    sourceLabelPrefix = "ソース"
+    sourceLabelPrefix = "ソース",
+    feedback = "フィードバック",
+    themeBlueBlack = "ブルーブラック",
+    themeTealLight = "ティール（明）",
+    themeTealDark = "ディープグリーン",
+    themeSakura = "さくら",
+    themePurple = "ミッドナイトパープル"
 )
 
 val EN = ZH_HANS.copy(
@@ -641,7 +674,13 @@ val EN = ZH_HANS.copy(
     downloading = "Downloading…",
     downloadAndInstall = "Download and install",
     goReleases = "Open Releases",
-    sourceLabelPrefix = "Source"
+    sourceLabelPrefix = "Source",
+    feedback = "Feedback",
+    themeBlueBlack = "Blue black",
+    themeTealLight = "Teal light",
+    themeTealDark = "Teal dark",
+    themeSakura = "Sakura",
+    themePurple = "Midnight purple"
 )
 
 fun appStringsFor(language: AppLanguage): AppStrings = when (AppLanguage.resolve(language)) {

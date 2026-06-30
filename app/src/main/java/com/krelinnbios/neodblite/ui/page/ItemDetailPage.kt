@@ -312,15 +312,6 @@ private fun DetailContent(
         MyMarkCard(item = item, mark = mark, browserUrl = browserUrl)
 
         CommunitySection(community = community, browserUrl = browserUrl)
-        if (!browserUrl.isNullOrBlank()) {
-            Spacer(Modifier.height(16.dp))
-            OutlinedButton(
-                onClick = { Browser.open(context, browserUrl) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(strings.openInBrowser)
-            }
-        }
         Spacer(Modifier.height(32.dp))
     }
 }

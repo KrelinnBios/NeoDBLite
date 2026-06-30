@@ -269,7 +269,6 @@ private fun MainScaffold(
             composable("search") {
                 SearchPage(
                     searchVM = searchVM,
-                    onBack = { navController.popBackStack() },
                     onOpenItem = openItem
                 )
             }

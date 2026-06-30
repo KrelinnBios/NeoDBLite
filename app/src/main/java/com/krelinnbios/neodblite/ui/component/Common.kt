@@ -1,7 +1,9 @@
 package com.krelinnbios.neodblite.ui.component
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -125,10 +127,16 @@ fun RatingStars(rating: Double?, modifier: Modifier = Modifier) {
 }
 
 /** 发现页网格卡片：封面优先 + 标题 + 评分星。 */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ItemGridCard(item: ItemBrief, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ItemGridCard(
+    item: ItemBrief,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null
+) {
     Column(
-        modifier = modifier.clickable(onClick = onClick)
+        modifier = modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
     ) {
         CoverImage(
             url = item.coverImageUrl,
@@ -251,17 +259,19 @@ fun MarkRow(
     }
 }
 /** 列表/网格中通用的条目行：封面 + 标题 + 副标题 + 评分。 */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ItemRow(
     item: ItemBrief,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    trailing: (@Composable () -> Unit)? = null
+    trailing: (@Composable () -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
         CoverImage(

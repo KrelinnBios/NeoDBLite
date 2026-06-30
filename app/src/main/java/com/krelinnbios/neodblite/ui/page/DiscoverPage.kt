@@ -63,6 +63,7 @@ import com.krelinnbios.neodblite.ui.component.ErrorBox
 import com.krelinnbios.neodblite.ui.component.ItemGridCard
 import com.krelinnbios.neodblite.ui.component.ItemRow
 import com.krelinnbios.neodblite.ui.component.LoadingBox
+import com.krelinnbios.neodblite.ui.component.QuickMarkSheet
 import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.ui.vm.DiscoverViewModel
 import com.krelinnbios.neodblite.ui.vm.SearchViewModel
@@ -87,6 +88,7 @@ fun DiscoverPage(
     val history by searchVM.history.collectAsState()
     val keyboard = LocalSoftwareKeyboardController.current
     val isSearching = query.isNotBlank()
+    var quickMarkItem by remember { mutableStateOf<ItemBrief?>(null) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         SearchBar(
@@ -110,6 +112,7 @@ fun DiscoverPage(
                 onRetry = searchVM::submit,
                 onLoadMore = searchVM::loadMore,
                 onOpenItem = onOpenItem,
+                onQuickMark = { quickMarkItem = it },
                 modifier = Modifier.fillMaxSize()
             )
         } else {
@@ -154,7 +157,11 @@ fun DiscoverPage(
                                     verticalArrangement = Arrangement.spacedBy(16.dp)
                                 ) {
                                     gridItems(s.data) { item ->
-                                        ItemGridCard(item = item, onClick = { onOpenItem(item) })
+                                        ItemGridCard(
+                                            item = item,
+                                            onClick = { onOpenItem(item) },
+                                            onLongClick = { quickMarkItem = item }
+                                        )
                                     }
                                 }
                             }
@@ -163,6 +170,10 @@ fun DiscoverPage(
                 }
             }
         }
+    }
+
+    quickMarkItem?.let { item ->
+        QuickMarkSheet(item = item, onDismiss = { quickMarkItem = null })
     }
 }
 
@@ -341,6 +352,7 @@ private fun SearchResultContent(
     onRetry: () -> Unit,
     onLoadMore: () -> Unit,
     onOpenItem: (ItemBrief) -> Unit,
+    onQuickMark: (ItemBrief) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier) {
@@ -372,7 +384,11 @@ private fun SearchResultContent(
                     ) {
                         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                             items(results) { item ->
-                                ItemRow(item = item, onClick = { onOpenItem(item) })
+                                ItemRow(
+                                    item = item,
+                                    onClick = { onOpenItem(item) },
+                                    onLongClick = { onQuickMark(item) }
+                                )
                             }
                             if (loadingMore) {
                                 item {

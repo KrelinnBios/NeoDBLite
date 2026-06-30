@@ -445,25 +445,43 @@ private fun CommunityEntryCard(entry: CommunityEntry) {
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = when (entry.type) {
-                        CommunityEntryType.COMMENT -> strings.comments
-                        CommunityEntryType.REVIEW -> strings.reviews
-                        CommunityEntryType.NOTE -> strings.notes
-                    },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                val meta = listOf(entry.author, entry.action).filter { it.isNotBlank() }.joinToString(" · ")
-                if (meta.isNotBlank()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = when (entry.type) {
+                            CommunityEntryType.COMMENT -> strings.comments
+                            CommunityEntryType.REVIEW -> strings.reviews
+                            CommunityEntryType.NOTE -> strings.notes
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    val meta = listOf(entry.author, entry.action).filter { it.isNotBlank() }.joinToString(" · ")
+                    if (meta.isNotBlank()) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = meta,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                    }
+                }
+                entry.date?.takeIf { it.isNotBlank() }?.let {
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = meta,
+                        text = it,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        maxLines = 1
                     )
                 }
             }

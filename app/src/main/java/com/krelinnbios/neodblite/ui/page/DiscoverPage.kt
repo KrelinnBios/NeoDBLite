@@ -200,7 +200,11 @@ private fun SearchBar(
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
-                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier.width(140.dp)
+                ) {
                     SearchCategoryItem(
                         label = strings.all,
                         selected = category == null,

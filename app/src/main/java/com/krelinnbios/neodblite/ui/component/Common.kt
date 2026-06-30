@@ -211,6 +211,19 @@ fun MarkRow(
                 )
             }
 
+            // 有评分时，在全站评分上方显示我的评分日期。
+            val myDate = if (myGrade != null) {
+                mark.createdTime?.takeIf { it.length >= 10 }?.substring(0, 10)
+            } else null
+            if (myDate != null) {
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    text = myDate,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
             Spacer(Modifier.height(4.dp))
             val cat = Category.fromApi(item.category ?: item.type)
                 ?.let { strings.categoryLabel(it) }.orEmpty()

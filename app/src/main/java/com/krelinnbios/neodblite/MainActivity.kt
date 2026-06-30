@@ -50,6 +50,8 @@ import com.krelinnbios.neodblite.ui.i18n.AppLanguagePreference
 import com.krelinnbios.neodblite.ui.i18n.AppStrings
 import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.ui.i18n.appStringsFor
+import com.krelinnbios.neodblite.ui.page.CollectionDetailPage
+import com.krelinnbios.neodblite.ui.page.CollectionsPage
 import com.krelinnbios.neodblite.ui.page.DiscoverPage
 import com.krelinnbios.neodblite.ui.page.ItemDetailPage
 import com.krelinnbios.neodblite.ui.page.LoginPage
@@ -60,6 +62,8 @@ import com.krelinnbios.neodblite.ui.theme.AppThemePreference
 import com.krelinnbios.neodblite.ui.theme.NeoDBLiteTheme
 import com.krelinnbios.neodblite.ui.vm.AuthState
 import com.krelinnbios.neodblite.ui.vm.AuthViewModel
+import com.krelinnbios.neodblite.ui.vm.CollectionDetailViewModel
+import com.krelinnbios.neodblite.ui.vm.CollectionsViewModel
 import com.krelinnbios.neodblite.ui.vm.DetailViewModel
 import com.krelinnbios.neodblite.ui.vm.DiscoverViewModel
 import com.krelinnbios.neodblite.ui.vm.ProfileViewModel
@@ -267,11 +271,35 @@ private fun MainScaffold(
                     profileVM = profileVM,
                     onOpenItem = openItem,
                     onOpenShelf = openShelf,
+                    onOpenCollections = { navController.navigate("collections") },
                     currentTheme = currentTheme,
                     onThemeChange = onThemeChange,
                     currentLanguage = currentLanguage,
                     onLanguageChange = onLanguageChange,
                     onLogout = { authVM.logout() }
+                )
+            }
+            composable("collections") {
+                val collectionsVM: CollectionsViewModel = viewModel()
+                CollectionsPage(
+                    collectionsVM = collectionsVM,
+                    onBack = { navController.popBackStack() },
+                    onOpenCollection = { c ->
+                        c.uuid?.let { navController.navigate("collectionDetail?uuid=$it") }
+                    }
+                )
+            }
+            composable(
+                route = "collectionDetail?uuid={uuid}",
+                arguments = listOf(navArgument("uuid") { type = NavType.StringType; defaultValue = "" })
+            ) { entry ->
+                val uuid = entry.arguments?.getString("uuid").orEmpty()
+                val collectionDetailVM: CollectionDetailViewModel = viewModel()
+                CollectionDetailPage(
+                    uuid = uuid,
+                    detailVM = collectionDetailVM,
+                    onBack = { navController.popBackStack() },
+                    onOpenItem = openItem
                 )
             }
             composable(

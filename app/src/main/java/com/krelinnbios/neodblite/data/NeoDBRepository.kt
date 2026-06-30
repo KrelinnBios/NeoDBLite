@@ -1,8 +1,11 @@
 package com.krelinnbios.neodblite.data
 
 import com.krelinnbios.neodblite.data.model.Category
+import com.krelinnbios.neodblite.data.model.Collection
 import com.krelinnbios.neodblite.data.model.CommunityEntry
 import com.krelinnbios.neodblite.data.model.CommunityEntryType
+import com.krelinnbios.neodblite.data.model.PagedCollectionItems
+import com.krelinnbios.neodblite.data.model.PagedCollections
 import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.MarkInRequest
 import com.krelinnbios.neodblite.data.model.MarkSchema
@@ -34,6 +37,13 @@ class NeoDBRepository(private val client: NeoDBClient) {
     suspend fun trending(category: Category): Result<List<ItemBrief>> = io {
         api.trending(category.trendingPath ?: category.apiValue)
     }
+
+    suspend fun myCollections(page: Int): Result<PagedCollections> = io { api.myCollections(page) }
+
+    suspend fun collection(uuid: String): Result<Collection> = io { api.collection(uuid) }
+
+    suspend fun collectionItems(uuid: String, page: Int): Result<PagedCollectionItems> =
+        io { api.collectionItems(uuid, page) }
 
     /** 用条目的 api_url/url（相对 baseUrl）拉详情。 */
     suspend fun item(path: String): Result<ItemBrief> = io {

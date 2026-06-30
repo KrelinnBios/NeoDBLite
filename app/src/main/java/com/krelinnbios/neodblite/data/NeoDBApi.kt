@@ -1,9 +1,12 @@
 package com.krelinnbios.neodblite.data
 
+import com.krelinnbios.neodblite.data.model.Collection
 import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.MarkInRequest
 import com.krelinnbios.neodblite.data.model.MarkSchema
 import com.krelinnbios.neodblite.data.model.NeoUser
+import com.krelinnbios.neodblite.data.model.PagedCollectionItems
+import com.krelinnbios.neodblite.data.model.PagedCollections
 import com.krelinnbios.neodblite.data.model.PagedMarks
 import com.krelinnbios.neodblite.data.model.SearchResult
 import okhttp3.ResponseBody
@@ -68,4 +71,16 @@ interface NeoDBApi {
 
     @DELETE("api/me/shelf/item/{uuid}")
     suspend fun deleteMark(@Path("uuid") uuid: String): Response<ResponseBody>
+
+    @GET("api/me/collection/")
+    suspend fun myCollections(@Query("page") page: Int): PagedCollections
+
+    @GET("api/collection/{uuid}")
+    suspend fun collection(@Path("uuid") uuid: String): Collection
+
+    @GET("api/collection/{uuid}/item/")
+    suspend fun collectionItems(
+        @Path("uuid") uuid: String,
+        @Query("page") page: Int
+    ): PagedCollectionItems
 }

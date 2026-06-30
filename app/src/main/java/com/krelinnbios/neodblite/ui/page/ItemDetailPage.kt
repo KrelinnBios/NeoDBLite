@@ -63,6 +63,8 @@ import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.ui.component.CoverImage
 import com.krelinnbios.neodblite.ui.component.ErrorBox
 import com.krelinnbios.neodblite.ui.component.LoadingBox
+import com.krelinnbios.neodblite.ui.component.MarkDraft
+import com.krelinnbios.neodblite.ui.component.MarkEditor
 import com.krelinnbios.neodblite.ui.component.RatingStars
 import com.krelinnbios.neodblite.global.App
 import com.krelinnbios.neodblite.ui.vm.DetailViewModel
@@ -497,141 +499,6 @@ private fun CommunityEntryCard(entry: CommunityEntry) {
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis
             )
-        }
-    }
-}
-/** 标记编辑草稿。 */
-data class MarkDraft(
-    val shelf: ShelfType,
-    val grade: Int,
-    val comment: String,
-    val visibility: Visibility,
-    val tags: List<String>,
-    val shareToFediverse: Boolean
-)
-
-/** 把用户输入的标签文本（空格/逗号/顿号分隔）解析为去重后的标签列表。 */
-private fun parseTags(text: String): List<String> =
-    text.split(' ', ',', '，', '、', '\n')
-        .map { it.trim().removePrefix("#") }
-        .filter { it.isNotBlank() }
-        .distinct()
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun MarkEditor(
-    category: Category?,
-    existing: MarkDraft?,
-    hasExisting: Boolean,
-    onSave: (MarkDraft) -> Unit,
-    onDelete: () -> Unit
-) {
-    var shelf by remember { mutableStateOf(existing?.shelf ?: ShelfType.WISHLIST) }
-    var grade by remember { mutableIntStateOf(existing?.grade ?: 0) }
-    var comment by remember { mutableStateOf(existing?.comment ?: "") }
-    var visibility by remember { mutableStateOf(existing?.visibility ?: Visibility.PUBLIC) }
-    var tagsText by remember { mutableStateOf(existing?.tags?.joinToString(" ") ?: "") }
-    var shareToFediverse by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, bottom = 28.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
-        Text(LocalAppStrings.current.status, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ShelfType.entries.forEach { type ->
-                FilterChip(
-                    selected = type == shelf,
-                    onClick = { shelf = type },
-                    label = { Text(LocalAppStrings.current.shelfLabel(type, category)) }
-                )
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = if (grade > 0) "${LocalAppStrings.current.rating}: $grade / 10" else "${LocalAppStrings.current.rating}: ${LocalAppStrings.current.unrated}",
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Slider(
-            value = grade.toFloat(),
-            onValueChange = { grade = it.toInt() },
-            valueRange = 0f..10f,
-            steps = 9
-        )
-
-        Spacer(Modifier.height(8.dp))
-        Text(LocalAppStrings.current.visibility, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Visibility.entries.forEach { v ->
-                FilterChip(
-                    selected = v == visibility,
-                    onClick = { visibility = v },
-                    label = { Text(LocalAppStrings.current.visibilityLabel(v)) }
-                )
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-        OutlinedTextField(
-            value = comment,
-            onValueChange = { comment = it },
-            label = { Text(LocalAppStrings.current.shortCommentOptional) },
-            modifier = Modifier.fillMaxWidth(),
-            minLines = 3
-        )
-
-        Spacer(Modifier.height(12.dp))
-        OutlinedTextField(
-            value = tagsText,
-            onValueChange = { tagsText = it },
-            label = { Text(LocalAppStrings.current.tagsOptional) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(12.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                LocalAppStrings.current.syncToFediverse,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Switch(checked = shareToFediverse, onCheckedChange = { shareToFediverse = it })
-        }
-
-        Spacer(Modifier.height(20.dp))
-        Button(
-            onClick = {
-                onSave(
-                    MarkDraft(
-                        shelf = shelf,
-                        grade = grade,
-                        comment = comment,
-                        visibility = visibility,
-                        tags = parseTags(tagsText),
-                        shareToFediverse = shareToFediverse
-                    )
-                )
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(LocalAppStrings.current.saveMark)
-        }
-        if (hasExisting) {
-            Spacer(Modifier.height(8.dp))
-            OutlinedButton(onClick = onDelete, modifier = Modifier.fillMaxWidth()) {
-                Text(LocalAppStrings.current.deleteMark)
-            }
         }
     }
 }

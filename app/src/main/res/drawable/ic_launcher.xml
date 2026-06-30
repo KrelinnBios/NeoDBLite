@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- pre-26 回退：白底 + NeoDB 三块拼图（v26+ 由 mipmap-anydpi-v26 自适应图标覆盖）。 -->
+<!-- 白底 + 单块黑色拼图（v26+ 由 mipmap-anydpi-v26 自适应图标覆盖）。 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -9,42 +9,12 @@
         android:fillColor="#FFFFFF"
         android:pathData="M0,0h108v108h-108z" />
     <group
-        android:translateX="26.88"
-        android:translateY="18"
-        android:scaleX="0.669"
-        android:scaleY="0.669">
-        <group
-            android:translateX="-45.741197"
-            android:translateY="-190.14988"
-            android:scaleX="0.95294163"
-            android:scaleY="0.95294163">
-            <group
-                android:translateX="27.709267"
-                android:translateY="192.98645"
-                android:scaleX="1.2602785"
-                android:scaleY="1.2602785">
-                <path
-                    android:fillColor="#c0d9b4"
-                    android:pathData="m 83.3,27.4 -8.7,-8.7 c 0.1,0 0.3,0 0.4,0 3.2,0 5.9,-2.6 5.9,-5.9 C 80.9,9.6 78.3,7 75,7 c -3.2,0 -5.9,2.6 -5.9,5.9 0,0.1 0,0.3 0,0.4 L 61,5.2 l -21,21 -0.7,0.8 -0.4,0.4 9.5,9.5 c -0.6,-0.2 -1.2,-0.3 -1.8,-0.3 -2.9,0 -5.3,2.4 -5.3,5.3 0,2.9 2.4,5.3 5.3,5.3 2.9,0 5.3,-2.4 5.3,-5.3 0,-0.5 -0.1,-0.9 -0.2,-1.4 0,-0.2 -0.1,-0.3 -0.1,-0.5 l 0.5,0.5 9.2,9.2 0.4,-0.4 0.8,-0.8 6.8,-6.8 c 0,0 0,0 0,0 -3.2,0 -5.9,-2.6 -5.9,-5.9 0,-3.3 2.6,-5.9 5.9,-5.9 3.2,0 5.9,2.6 5.9,5.9 0,0 0,0 0,0 z" />
-            </group>
-            <group
-                android:translateX="27.583487"
-                android:translateY="192.79709"
-                android:scaleX="1.2602785"
-                android:scaleY="1.2602785">
-                <path
-                    android:fillColor="#8dcaff"
-                    android:pathData="m 46.5,49.5 c -4.2,0 -7.6,-3.4 -7.6,-7.6 0,-3 1.7,-5.6 4.2,-6.8 l -5.9,-5.9 v 0 l -21,21 22.2,22.2 9.5,-9.5 c -0.3,0.6 -0.4,1.3 -0.4,2 0,2.9 2.4,5.3 5.3,5.3 2.9,0 5.3,-2.4 5.3,-5.3 0,-2.9 -2.4,-5.3 -5.3,-5.3 -0.7,0 -1.4,0.1 -2,0.4 l 8.6,-8.6 -6,-6 c -1.3,2.3 -3.9,4.1 -6.9,4.1 z" />
-            </group>
-            <group
-                android:translateX="27.51993"
-                android:translateY="192.73364"
-                android:scaleX="1.2602785"
-                android:scaleY="1.2602785">
-                <path
-                    android:fillColor="#ffb380"
-                    android:pathData="m 61.1,52.9 v 0 0 l -4.9,4.9 c 2.5,1.2 4.3,3.8 4.3,6.9 0,4.2 -3.4,7.6 -7.6,7.6 -3,0 -5.6,-1.8 -6.9,-4.3 L 40.1,73.9 40,74 61,95 69.1,86.9 v 0 c -3.2,0 -5.9,-2.6 -5.9,-5.9 0,-3.3 2.6,-5.9 5.9,-5.9 3.2,0 5.9,2.6 5.9,5.9 l 7.1,-7.1 -8.1,-8 v 0 l -0.6,-0.6 c 0.1,0 0.3,0 0.4,0 3.2,0 5.9,-2.6 5.9,-5.9 0,-1.5 -0.6,-2.8 -1.5,-3.9 -1,-0.9 -2.4,-1.5 -3.9,-1.5 -3.2,0 -5.9,2.6 -5.9,5.9 0,0.1 0,0.3 0,0.4 L 68,59.9 v 0 z" />
-            </group>
-        </group>
+        android:translateX="22"
+        android:translateY="22"
+        android:scaleX="2.6667"
+        android:scaleY="2.6667">
+        <path
+            android:fillColor="#000000"
+            android:pathData="M20.5,11H19V7c0,-1.1 -0.9,-2 -2,-2h-4V3.5C13,2.12 11.88,1 10.5,1S8,2.12 8,3.5V5H4c-1.1,0 -1.99,0.9 -1.99,2v3.8H3.5c1.49,0 2.7,1.21 2.7,2.7s-1.21,2.7 -2.7,2.7H2V20c0,1.1 0.9,2 2,2h3.8v-1.5c0,-1.49 1.21,-2.7 2.7,-2.7 1.49,0 2.7,1.21 2.7,2.7V22H17c1.1,0 2,-0.9 2,-2v-4h1.5c1.38,0 2.5,-1.12 2.5,-2.5S21.88,11 20.5,11z" />
     </group>
 </vector>

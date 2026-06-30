@@ -286,7 +286,7 @@ private fun RecentSearches(
         ) {
             Text(
                 text = strings.recentSearches,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f)
             )

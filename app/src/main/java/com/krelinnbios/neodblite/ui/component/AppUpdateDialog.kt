@@ -26,7 +26,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.util.AppDownloadProgress
 import com.krelinnbios.neodblite.util.AppUpdateInfo
@@ -56,7 +58,14 @@ fun AppUpdateDialog(info: AppUpdateInfo, onDismiss: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.surface,
         titleContentColor = MaterialTheme.colorScheme.onSurface,
         textContentColor = MaterialTheme.colorScheme.onSurface,
-        title = { Text("${strings.newVersionPrefix}${info.versionName}") },
+        // 参考 YamiboReaderLite：标题只比正文略大（18sp / SemiBold）。
+        title = {
+            Text(
+                text = "${strings.newVersionPrefix}${info.versionName}",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        },
         text = {
             Column(
                 modifier = Modifier

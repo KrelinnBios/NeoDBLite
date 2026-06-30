@@ -9,6 +9,13 @@
   面向 NeoDB 与兼容实例的非官方 Android 标记客户端
 </p>
 
+<p align="center">
+  <a href="README.md">简体中文</a> ·
+  <a href="README.zh-TW.md">繁體中文</a> ·
+  <a href="README.ja.md">日本語</a> ·
+  <a href="README.en.md">English</a>
+</p>
+
 ## 项目简介
 
 NeoDB Lite 是面向 [NeoDB](https://neodb.social) 及兼容实例的非官方 Android 客户端，用于在手机上浏览、搜索和标记书影音游等条目。
@@ -34,6 +41,16 @@ NeoDB Lite 是面向 [NeoDB](https://neodb.social) 及兼容实例的非官方 A
 - 主题切换：支持多套主题配色切换。
 - 语言切换：支持简体中文、繁體中文、日本語和 English 界面。
 - 应用更新：启动时自动检查新版本（可在设置页关闭），支持应用内下载、调起系统安装器、下载失败重试与手动下载入口。
+
+## 界面预览
+
+<p align="center">
+  <img src="screenshots/Screenshot_2026-06-30-18-12-40-43_8d633091d37a6aa.jpg" width="19%" alt="发现页">
+  <img src="screenshots/Screenshot_2026-06-30-18-13-36-45_8d633091d37a6aa.jpg" width="19%" alt="条目详情">
+  <img src="screenshots/Screenshot_2026-06-30-18-12-53-95_8d633091d37a6aa.jpg" width="19%" alt="书架">
+  <img src="screenshots/Screenshot_2026-06-30-18-14-24-14_8d633091d37a6aa.jpg" width="19%" alt="个人主页">
+  <img src="screenshots/Screenshot_2026-06-30-18-17-47-14_8d633091d37a6aa.jpg" width="19%" alt="设置">
+</p>
 
 ## 使用方式
 

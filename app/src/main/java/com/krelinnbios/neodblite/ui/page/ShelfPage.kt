@@ -1,13 +1,16 @@
 package com.krelinnbios.neodblite.ui.page
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -112,22 +115,76 @@ fun ShelfPage(
             }
         }
 
-        // 工具栏：纯图标 —— 日历 / 标签 / 类型 / 搜索。
+        // 工具栏：四个按钮均匀分布，顺序为 日历 / 类型 / 标签 / 搜索。
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { showCalendar = !showCalendar }) {
-                Icon(
-                    imageVector = Icons.Filled.DateRange,
-                    contentDescription = null,
-                    tint = if (showCalendar) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                IconButton(onClick = { showCalendar = !showCalendar }) {
+                    Icon(
+                        imageVector = Icons.Filled.DateRange,
+                        contentDescription = null,
+                        tint = if (showCalendar) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
-            Box {
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                var catExpanded by remember { mutableStateOf(false) }
+                IconButton(onClick = { catExpanded = true }) {
+                    Icon(
+                        imageVector = Icons.Filled.Category,
+                        contentDescription = null,
+                        tint = if (category != null) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                DropdownMenu(
+                    expanded = catExpanded,
+                    onDismissRequest = { catExpanded = false },
+                    modifier = Modifier
+                        .width(IntrinsicSize.Min)
+                        .widthIn(max = 220.dp)
+                ) {
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                strings.all,
+                                color = if (category == null) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                            )
+                        },
+                        onClick = { shelfVM.selectCategory(null); catExpanded = false },
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                    )
+                    Category.entries.forEach { cat ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    strings.categoryLabel(cat),
+                                    color = if (cat == category) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurface
+                                )
+                            },
+                            onClick = { shelfVM.selectCategory(cat); catExpanded = false },
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                        )
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
                 var tagsExpanded by remember { mutableStateOf(false) }
                 IconButton(onClick = { tagsExpanded = true }) {
                     Icon(
@@ -137,7 +194,13 @@ fun ShelfPage(
                         else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                DropdownMenu(expanded = tagsExpanded, onDismissRequest = { tagsExpanded = false }) {
+                DropdownMenu(
+                    expanded = tagsExpanded,
+                    onDismissRequest = { tagsExpanded = false },
+                    modifier = Modifier
+                        .width(IntrinsicSize.Min)
+                        .widthIn(max = 240.dp)
+                ) {
                     DropdownMenuItem(
                         text = {
                             Text(
@@ -146,7 +209,8 @@ fun ShelfPage(
                                 else MaterialTheme.colorScheme.onSurface
                             )
                         },
-                        onClick = { selectedTag = null; tagsExpanded = false }
+                        onClick = { selectedTag = null; tagsExpanded = false },
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
                     )
                     userTags.forEach { tag ->
                         DropdownMenuItem(
@@ -159,58 +223,27 @@ fun ShelfPage(
                                     else MaterialTheme.colorScheme.onSurface
                                 )
                             },
-                            onClick = { selectedTag = tag; tagsExpanded = false }
+                            onClick = { selectedTag = tag; tagsExpanded = false },
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
                         )
                     }
                 }
             }
 
-            Box {
-                var catExpanded by remember { mutableStateOf(false) }
-                IconButton(onClick = { catExpanded = true }) {
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                IconButton(onClick = { showSearch = !showSearch }) {
                     Icon(
-                        imageVector = Icons.Filled.Category,
+                        imageVector = Icons.Filled.Search,
                         contentDescription = null,
-                        tint = if (category != null) MaterialTheme.colorScheme.primary
+                        tint = if (showSearch) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                DropdownMenu(expanded = catExpanded, onDismissRequest = { catExpanded = false }) {
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                strings.all,
-                                color = if (category == null) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurface
-                            )
-                        },
-                        onClick = { shelfVM.selectCategory(null); catExpanded = false }
-                    )
-                    Category.entries.forEach { cat ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    strings.categoryLabel(cat),
-                                    color = if (cat == category) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.onSurface
-                                )
-                            },
-                            onClick = { shelfVM.selectCategory(cat); catExpanded = false }
-                        )
-                    }
-                }
-            }
-
-            IconButton(onClick = { showSearch = !showSearch }) {
-                Icon(
-                    imageVector = Icons.Filled.Search,
-                    contentDescription = null,
-                    tint = if (showSearch) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
-
         if (showSearch) {
             OutlinedTextField(
                 value = searchQuery,

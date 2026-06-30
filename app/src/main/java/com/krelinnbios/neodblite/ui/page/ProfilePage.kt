@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -88,6 +89,7 @@ fun ProfilePage(
     profileVM: ProfileViewModel,
     onOpenItem: (ItemBrief) -> Unit,
     onOpenShelf: (ShelfType) -> Unit,
+    onOpenCollections: () -> Unit,
     currentTheme: AppTheme,
     onThemeChange: (AppTheme) -> Unit,
     currentLanguage: AppLanguage,
@@ -132,6 +134,7 @@ fun ProfilePage(
                             onOpenShelf = onOpenShelf
                         )
                     }
+                    item { CollectionsEntry(onClick = onOpenCollections) }
                     item {
                         RecentSection(
                             items = s.data.recent,
@@ -487,6 +490,30 @@ private fun AutoUpdateRow(
             Text(strings.autoUpdateCheckSubtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Switch(checked = enabled, onCheckedChange = onEnabledChange)
+    }
+}
+
+@Composable
+private fun CollectionsEntry(onClick: () -> Unit) {
+    val strings = LocalAppStrings.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = strings.collections,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

@@ -22,7 +22,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
@@ -71,7 +70,6 @@ import com.krelinnbios.neodblite.ui.vm.SearchViewModel
 @Composable
 fun SearchPage(
     searchVM: SearchViewModel,
-    onBack: () -> Unit,
     onOpenItem: (ItemBrief) -> Unit
 ) {
     val strings = LocalAppStrings.current
@@ -97,15 +95,9 @@ fun SearchPage(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 4.dp, end = 12.dp, top = 8.dp, bottom = 6.dp),
+                .padding(start = 16.dp, end = 12.dp, top = 8.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = strings.back
-                )
-            }
             SearchField(
                 query = query,
                 category = searchCategory,

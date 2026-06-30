@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.google.gson.Gson
+import com.krelinnbios.neodblite.data.model.NeoUser
 import kotlinx.coroutines.flow.firstOrNull
 
 private val Context.authDataStore: DataStore<Preferences> by preferencesDataStore(name = "neodb_auth")
@@ -25,12 +27,25 @@ class AuthStore(private val context: Context) {
     @Volatile var cachedToken: String? = null
         private set
 
+    /** 上次成功获取的当前用户，供网络异常时保持登录、先进入应用。 */
+    @Volatile var cachedUser: NeoUser? = null
+        private set
+
     private val store get() = context.authDataStore
+    private val gson = Gson()
 
     suspend fun load() {
         val prefs = store.data.firstOrNull()
         cachedHost = prefs?.get(KEY_HOST)?.takeIf { it.isNotBlank() } ?: DEFAULT_HOST
         cachedToken = prefs?.get(KEY_TOKEN)?.takeIf { it.isNotBlank() }
+        cachedUser = prefs?.get(KEY_USER)?.takeIf { it.isNotBlank() }?.let {
+            runCatching { gson.fromJson(it, NeoUser::class.java) }.getOrNull()
+        }
+    }
+
+    suspend fun saveUser(user: NeoUser) {
+        cachedUser = user
+        runCatching { store.edit { it[KEY_USER] = gson.toJson(user) } }
     }
 
     suspend fun setHost(host: String) {
@@ -62,7 +77,11 @@ class AuthStore(private val context: Context) {
 
     suspend fun clearToken() {
         cachedToken = null
-        store.edit { it.remove(KEY_TOKEN) }
+        cachedUser = null
+        store.edit {
+            it.remove(KEY_TOKEN)
+            it.remove(KEY_USER)
+        }
     }
 
     companion object {
@@ -70,6 +89,7 @@ class AuthStore(private val context: Context) {
 
         private val KEY_HOST = stringPreferencesKey("instance_host")
         private val KEY_TOKEN = stringPreferencesKey("access_token")
+        private val KEY_USER = stringPreferencesKey("cached_user")
         private fun clientIdKey(host: String) = stringPreferencesKey("client_id@$host")
         private fun clientSecretKey(host: String) = stringPreferencesKey("client_secret@$host")
 

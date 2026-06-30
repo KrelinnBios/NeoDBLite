@@ -32,7 +32,14 @@ enum class AppTheme(val label: String, val isDark: Boolean, val scheme: ColorSch
             onSurfaceVariant = Color(0xFFA9BBD0),
             outline = Color(0xFF3A4A5E),
             error = Color(0xFFFFB4AB),
-            onError = Color(0xFF690005)
+            onError = Color(0xFF690005),
+            surfaceDim = Color(0xFF0D141D),
+            surfaceBright = Color(0xFF2A3B50),
+            surfaceContainerLowest = Color(0xFF080D14),
+            surfaceContainerLow = Color(0xFF141D29),
+            surfaceContainer = Color(0xFF1A2735),
+            surfaceContainerHigh = Color(0xFF223247),
+            surfaceContainerHighest = Color(0xFF293B50)
         )
     ),
 
@@ -55,7 +62,14 @@ enum class AppTheme(val label: String, val isDark: Boolean, val scheme: ColorSch
             surfaceVariant = md_surfaceVariant,
             onSurfaceVariant = md_onSurfaceVariant,
             outline = md_outline,
-            error = md_error
+            error = md_error,
+            surfaceDim = Color(0xFFDBE1DD),
+            surfaceBright = Color(0xFFFBFDFA),
+            surfaceContainerLowest = Color(0xFFFFFFFF),
+            surfaceContainerLow = Color(0xFFF4F8F5),
+            surfaceContainer = Color(0xFFEEF3EF),
+            surfaceContainerHigh = Color(0xFFE8EEEA),
+            surfaceContainerHighest = Color(0xFFE2E8E4)
         )
     ),
 
@@ -78,7 +92,14 @@ enum class AppTheme(val label: String, val isDark: Boolean, val scheme: ColorSch
             surfaceVariant = md_dark_surfaceVariant,
             onSurfaceVariant = md_dark_onSurfaceVariant,
             outline = md_dark_outline,
-            error = md_dark_error
+            error = md_dark_error,
+            surfaceDim = Color(0xFF111413),
+            surfaceBright = Color(0xFF363A38),
+            surfaceContainerLowest = Color(0xFF0F1211),
+            surfaceContainerLow = Color(0xFF1B201E),
+            surfaceContainer = Color(0xFF1F2523),
+            surfaceContainerHigh = Color(0xFF2A302E),
+            surfaceContainerHighest = Color(0xFF353B39)
         )
     ),
 
@@ -101,7 +122,14 @@ enum class AppTheme(val label: String, val isDark: Boolean, val scheme: ColorSch
             surfaceVariant = Color(0xFFF2DDE1),
             onSurfaceVariant = Color(0xFF514347),
             outline = Color(0xFF837377),
-            error = md_error
+            error = md_error,
+            surfaceDim = Color(0xFFE7D6D9),
+            surfaceBright = Color(0xFFFFF8F8),
+            surfaceContainerLowest = Color(0xFFFFFFFF),
+            surfaceContainerLow = Color(0xFFFCEFF1),
+            surfaceContainer = Color(0xFFFCE9EC),
+            surfaceContainerHigh = Color(0xFFF8E3E6),
+            surfaceContainerHighest = Color(0xFFF2DDE1)
         )
     ),
 
@@ -124,7 +152,14 @@ enum class AppTheme(val label: String, val isDark: Boolean, val scheme: ColorSch
             surfaceVariant = Color(0xFF49454F),
             onSurfaceVariant = Color(0xFFCAC4D0),
             outline = Color(0xFF938F99),
-            error = Color(0xFFFFB4AB)
+            error = Color(0xFFFFB4AB),
+            surfaceDim = Color(0xFF141218),
+            surfaceBright = Color(0xFF3B383F),
+            surfaceContainerLowest = Color(0xFF0F0D13),
+            surfaceContainerLow = Color(0xFF1D1B20),
+            surfaceContainer = Color(0xFF211F26),
+            surfaceContainerHigh = Color(0xFF2B2930),
+            surfaceContainerHighest = Color(0xFF36343B)
         )
     );
 

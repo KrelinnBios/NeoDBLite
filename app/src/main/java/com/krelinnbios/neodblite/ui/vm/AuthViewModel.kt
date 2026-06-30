@@ -36,15 +36,31 @@ class AuthViewModel : ViewModel() {
 
     fun refresh() {
         viewModelScope.launch {
-            if (container.authStore.cachedToken.isNullOrBlank()) {
+            val store = container.authStore
+            if (store.cachedToken.isNullOrBlank()) {
                 _authState.value = AuthState.LoggedOut
                 return@launch
             }
+            // 有 token：先用缓存用户进入应用，避免网络抖动时卡在 Loading 或被误登出。
+            val cached = store.cachedUser
+            if (cached != null && _authState.value !is AuthState.LoggedIn) {
+                _authState.value = AuthState.LoggedIn(cached)
+            }
             container.repository.me()
-                .onSuccess { _authState.value = AuthState.LoggedIn(it) }
-                .onFailure {
-                    // token 失效或网络异常：保守地退回登录态，让用户重新授权。
-                    _authState.value = AuthState.LoggedOut
+                .onSuccess {
+                    store.saveUser(it)
+                    _authState.value = AuthState.LoggedIn(it)
+                }
+                .onFailure { error ->
+                    val code = (error as? retrofit2.HttpException)?.code()
+                    if (code == 401 || code == 403) {
+                        // 令牌确实失效：清除并要求重新登录。
+                        container.authRepository.logout()
+                        _authState.value = AuthState.LoggedOut
+                    } else {
+                        // 网络/服务端临时错误：保持登录，绝不因网络抖动踢用户重登。
+                        _authState.value = AuthState.LoggedIn(cached ?: NeoUser())
+                    }
                 }
         }
     }

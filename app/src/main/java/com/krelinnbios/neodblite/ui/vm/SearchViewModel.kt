@@ -14,9 +14,13 @@ import kotlinx.coroutines.launch
 
 class SearchViewModel : ViewModel() {
     private val repo = App.container.repository
+    private val historyStore = App.container.searchHistory
 
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
+
+    private val _history = MutableStateFlow(historyStore.load())
+    val history: StateFlow<List<String>> = _history.asStateFlow()
 
     /** null 表示全部类目。 */
     private val _category = MutableStateFlow<Category?>(null)
@@ -70,9 +74,25 @@ class SearchViewModel : ViewModel() {
         if (_query.value.isNotBlank()) submit()
     }
 
+    /** 点击历史项：填入并立即搜索。 */
+    fun searchFor(query: String) {
+        _query.value = query
+        submit()
+    }
+
+    fun removeHistory(query: String) {
+        _history.value = historyStore.remove(query)
+    }
+
+    fun clearHistory() {
+        historyStore.clear()
+        _history.value = emptyList()
+    }
+
     fun submit() {
         val q = _query.value.trim()
         if (q.isBlank()) return
+        _history.value = historyStore.add(q)
         page = 1
         accumulated.clear()
         _state.value = UiState.Loading

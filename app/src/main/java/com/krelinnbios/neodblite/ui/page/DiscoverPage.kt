@@ -27,7 +27,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -82,6 +84,7 @@ fun DiscoverPage(
     val searchState by searchVM.state.collectAsState()
     val loadingMore by searchVM.loadingMore.collectAsState()
     val searchRefreshing by searchVM.refreshing.collectAsState()
+    val history by searchVM.history.collectAsState()
     val keyboard = LocalSoftwareKeyboardController.current
     val isSearching = query.isNotBlank()
 
@@ -110,6 +113,13 @@ fun DiscoverPage(
                 modifier = Modifier.fillMaxSize()
             )
         } else {
+            if (history.isNotEmpty()) {
+                RecentSearches(
+                    history = history,
+                    onPick = { keyboard?.hide(); searchVM.searchFor(it) },
+                    onClear = searchVM::clearHistory
+                )
+            }
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -261,6 +271,43 @@ private fun SearchBar(
                     imageVector = Icons.Filled.Search,
                     contentDescription = strings.search,
                     tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecentSearches(
+    history: List<String>,
+    onPick: (String) -> Unit,
+    onClear: () -> Unit
+) {
+    val strings = LocalAppStrings.current
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = strings.recentSearches,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f).padding(start = 4.dp)
+            )
+            IconButton(onClick = onClear) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(history) { q ->
+                AssistChip(
+                    onClick = { onPick(q) },
+                    label = { Text(q, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 )
             }
         }

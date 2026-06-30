@@ -3,6 +3,8 @@ package com.krelinnbios.neodblite.ui.page
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.Box
@@ -53,6 +55,7 @@ import com.krelinnbios.neodblite.data.model.CommunityEntry
 import com.krelinnbios.neodblite.data.model.CommunityEntryType
 import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.MarkInRequest
+import com.krelinnbios.neodblite.data.model.MarkSchema
 import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.data.model.Visibility
 import com.krelinnbios.neodblite.ui.UiState
@@ -136,14 +139,7 @@ fun ItemDetailPage(
                 is UiState.Error -> ErrorBox(s.message, onRetry = { detailVM.load(path) })
                 is UiState.Success -> DetailContent(
                     item = s.data,
-                    markSummary = mark?.let {
-                        val cat = Category.fromApi(s.data.category ?: s.data.type)
-                        val shelf = ShelfType.fromApi(it.shelfType)
-                        buildString {
-                            if (shelf != null) append(strings.shelfLabel(shelf, cat))
-                            it.ratingGrade?.takeIf { g -> g > 0 }?.let { g -> append(" · ${strings.myRating} $g/10") }
-                        }
-                    },
+                    mark = mark,
                     community = community,
                     onMark = { showSheet = true },
                     onSearchTag = onSearchTag
@@ -197,17 +193,25 @@ fun ItemDetailPage(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun DetailContent(
     item: ItemBrief,
-    markSummary: String?,
+    mark: MarkSchema?,
     community: UiState<List<CommunityEntry>>?,
     onMark: () -> Unit,
     onSearchTag: (String) -> Unit
 ) {
     val strings = LocalAppStrings.current
     val context = LocalContext.current
+    val markSummary = mark?.let {
+        val cat = Category.fromApi(item.category ?: item.type)
+        val shelf = ShelfType.fromApi(it.shelfType)
+        buildString {
+            if (shelf != null) append(strings.shelfLabel(shelf, cat))
+            it.ratingGrade?.takeIf { g -> g > 0 }?.let { g -> append(" · ${strings.myRating} $g/10") }
+        }.takeIf { s -> s.isNotBlank() }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -287,19 +291,21 @@ private fun DetailContent(
         if (sources.isNotEmpty()) {
             Spacer(Modifier.height(20.dp))
             Text(strings.sources, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
-            Spacer(Modifier.height(6.dp))
-            sources.forEach { url ->
-                Text(
-                    text = "↗ ${sourceLabel(url)}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { Browser.open(context, url) }
-                        .padding(vertical = 8.dp)
-                )
+            Spacer(Modifier.height(8.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                sources.forEach { url ->
+                    AssistChip(
+                        onClick = { Browser.open(context, url) },
+                        label = { Text("↗ ${sourceLabel(url)}") }
+                    )
+                }
             }
         }
+
+        MyMarkCard(item = item, mark = mark)
 
         CommunitySection(community = community, browserUrl = remember(item) { itemWebUrl(item) })
 
@@ -317,6 +323,63 @@ private fun DetailContent(
     }
 }
 
+
+/** 来源与社区内容之间：展示我自己的评分与短评，排版与社区卡片一致。 */
+@Composable
+private fun MyMarkCard(item: ItemBrief, mark: MarkSchema?) {
+    val strings = LocalAppStrings.current
+    if (mark == null) return
+    val grade = mark.ratingGrade?.takeIf { it > 0 }
+    val comment = mark.commentText?.takeIf { it.isNotBlank() }
+    if (grade == null && comment == null) return
+
+    val cat = Category.fromApi(item.category ?: item.type)
+    val shelf = ShelfType.fromApi(mark.shelfType)
+    Spacer(Modifier.height(20.dp))
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = strings.myRating,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                if (shelf != null) {
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = strings.shelfLabel(shelf, cat),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            if (grade != null) {
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RatingStars(rating = grade.toDouble())
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "$grade/10",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            if (comment != null) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = comment,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun CommunitySection(
@@ -382,27 +445,49 @@ private fun CommunityEntryCard(entry: CommunityEntry) {
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = when (entry.type) {
-                        CommunityEntryType.COMMENT -> strings.comments
-                        CommunityEntryType.REVIEW -> strings.reviews
-                        CommunityEntryType.NOTE -> strings.notes
-                    },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                val meta = listOf(entry.author, entry.action).filter { it.isNotBlank() }.joinToString(" · ")
-                if (meta.isNotBlank()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = when (entry.type) {
+                            CommunityEntryType.COMMENT -> strings.comments
+                            CommunityEntryType.REVIEW -> strings.reviews
+                            CommunityEntryType.NOTE -> strings.notes
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    val meta = listOf(entry.author, entry.action).filter { it.isNotBlank() }.joinToString(" · ")
+                    if (meta.isNotBlank()) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = meta,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                    }
+                }
+                entry.date?.takeIf { it.isNotBlank() }?.let {
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = meta,
+                        text = it,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        maxLines = 1
                     )
                 }
+            }
+            entry.rating?.takeIf { it > 0.0 }?.let {
+                Spacer(Modifier.height(6.dp))
+                RatingStars(rating = it)
             }
             Spacer(Modifier.height(6.dp))
             Text(

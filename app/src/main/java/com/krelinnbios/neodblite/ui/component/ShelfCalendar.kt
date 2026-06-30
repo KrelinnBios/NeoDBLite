@@ -132,13 +132,15 @@ fun ShelfCalendar(
                                         showPicker = false
                                     },
                                     shape = RoundedCornerShape(8.dp),
-                                    color = if (selected) MaterialTheme.colorScheme.primaryContainer
+                                    color = if (selected) MaterialTheme.colorScheme.primary
                                     else MaterialTheme.colorScheme.surfaceVariant
                                 ) {
                                     Text(
                                         text = monthStr,
                                         style = MaterialTheme.typography.bodySmall,
                                         textAlign = TextAlign.Center,
+                                        color = if (selected) MaterialTheme.colorScheme.onPrimary
+                                        else MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
                                     )
                                 }

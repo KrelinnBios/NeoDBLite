@@ -11,6 +11,8 @@ object CommunityHtmlParser {
     private val tldrRegex = Regex("""<div\s+class=["']tldr[^"']*["'][^>]*>([\s\S]*?)</div>""", RegexOption.IGNORE_CASE)
     private val absoluteHrefRegex = Regex("""href=["'](https?://[^"']+)["']""", RegexOption.IGNORE_CASE)
     private val relativeHrefRegex = Regex("""href=["'](/(?:review|@|users|piece|post)/[^"']+)["']""", RegexOption.IGNORE_CASE)
+    private val ratingRegex = Regex("""class=["']rating-star["']\s+data-rating=["']([\d.]+)["']""", RegexOption.IGNORE_CASE)
+    private val dateRegex = Regex("""class=["']post_timestamp["'][\s\S]*?<a\b[^>]*>([\s\S]*?)</a>""", RegexOption.IGNORE_CASE)
     private val tagRegex = Regex("""<[^>]+>""")
     private val whitespaceRegex = Regex("""\s+""")
 
@@ -35,13 +37,18 @@ object CommunityHtmlParser {
         val action = clean(actionRegex.find(section)?.groupValues?.getOrNull(1).orEmpty())
         val url = absoluteHrefRegex.find(section)?.groupValues?.getOrNull(1)
             ?: relativeHrefRegex.find(section)?.groupValues?.getOrNull(1)?.let { "https://$host$it" }
+        val rating = ratingRegex.find(section)?.groupValues?.getOrNull(1)?.toDoubleOrNull()
+        val date = dateRegex.find(section)?.groupValues?.getOrNull(1)
+            ?.let { clean(it) }?.takeIf { it.isNotBlank() }
 
         return CommunityEntry(
             type = type,
             author = author,
             action = action,
             content = content,
-            url = url
+            url = url,
+            rating = rating,
+            date = date
         )
     }
 

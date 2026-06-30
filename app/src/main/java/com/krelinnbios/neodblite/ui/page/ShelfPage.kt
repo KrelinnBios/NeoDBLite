@@ -4,22 +4,26 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -36,16 +40,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.krelinnbios.neodblite.data.model.Category
 import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.MarkInRequest
 import com.krelinnbios.neodblite.data.model.MarkSchema
 import com.krelinnbios.neodblite.data.model.ShelfType
+import com.krelinnbios.neodblite.data.model.Tag
 import com.krelinnbios.neodblite.data.model.Visibility
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.component.EmptyBox
 import com.krelinnbios.neodblite.ui.component.ErrorBox
+import com.krelinnbios.neodblite.ui.component.ItemRow
 import com.krelinnbios.neodblite.ui.component.LoadingBox
 import com.krelinnbios.neodblite.ui.component.MarkDraft
 import com.krelinnbios.neodblite.ui.component.MarkEditor
@@ -53,6 +61,7 @@ import com.krelinnbios.neodblite.ui.component.MarkRow
 import com.krelinnbios.neodblite.ui.component.ShelfCalendar
 import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.ui.vm.ShelfViewModel
+import com.krelinnbios.neodblite.ui.vm.TagItemsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,15 +71,22 @@ fun ShelfPage(
 ) {
     val strings = LocalAppStrings.current
     val context = LocalContext.current
+    val tagItemsVM: TagItemsViewModel = viewModel()
+
     val shelfType by shelfVM.shelfType.collectAsState()
     val category by shelfVM.category.collectAsState()
     val state by shelfVM.state.collectAsState()
     val loadingMore by shelfVM.loadingMore.collectAsState()
     val refreshing by shelfVM.refreshing.collectAsState()
     val toast by shelfVM.toast.collectAsState()
+    val userTags by shelfVM.userTags.collectAsState()
 
     var showCalendar by remember { mutableStateOf(false) }
     var selectedDay by remember(shelfType, category) { mutableStateOf<String?>(null) }
+    // 选中标签后进入「标签模式」，展示该标签下的全部条目；切换书架状态会退出标签模式。
+    var selectedTag by remember(shelfType) { mutableStateOf<Tag?>(null) }
+    var showSearch by remember { mutableStateOf(false) }
+    var searchQuery by remember(shelfType, category, selectedTag) { mutableStateOf("") }
     var editingMark by remember { mutableStateOf<MarkSchema?>(null) }
 
     LaunchedEffect(toast) {
@@ -78,6 +94,9 @@ fun ShelfPage(
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             shelfVM.consumeToast()
         }
+    }
+    LaunchedEffect(selectedTag) {
+        selectedTag?.uuid?.let { tagItemsVM.loadOnce(it) }
     }
 
     val shelves = ShelfType.entries
@@ -93,103 +112,199 @@ fun ShelfPage(
             }
         }
 
-        LazyRow(
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+        // 工具栏：纯图标 —— 日历 / 标签 / 类型 / 搜索。
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            item {
-                IconButton(onClick = { showCalendar = !showCalendar }) {
+            IconButton(onClick = { showCalendar = !showCalendar }) {
+                Icon(
+                    imageVector = Icons.Filled.DateRange,
+                    contentDescription = null,
+                    tint = if (showCalendar) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Box {
+                var tagsExpanded by remember { mutableStateOf(false) }
+                IconButton(onClick = { tagsExpanded = true }) {
                     Icon(
-                        imageVector = Icons.Filled.DateRange,
+                        imageVector = Icons.Filled.Label,
                         contentDescription = null,
-                        tint = if (showCalendar) MaterialTheme.colorScheme.primary
+                        tint = if (selectedTag != null) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                DropdownMenu(expanded = tagsExpanded, onDismissRequest = { tagsExpanded = false }) {
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                strings.all,
+                                color = if (selectedTag == null) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                            )
+                        },
+                        onClick = { selectedTag = null; tagsExpanded = false }
+                    )
+                    userTags.forEach { tag ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    tag.bestTitle,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = if (tag.uuid == selectedTag?.uuid) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurface
+                                )
+                            },
+                            onClick = { selectedTag = tag; tagsExpanded = false }
+                        )
+                    }
+                }
             }
-            item {
-                FilterChip(
-                    selected = category == null,
-                    onClick = { shelfVM.selectCategory(null) },
-                    label = { Text(strings.all) }
-                )
+
+            Box {
+                var catExpanded by remember { mutableStateOf(false) }
+                IconButton(onClick = { catExpanded = true }) {
+                    Icon(
+                        imageVector = Icons.Filled.Category,
+                        contentDescription = null,
+                        tint = if (category != null) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                DropdownMenu(expanded = catExpanded, onDismissRequest = { catExpanded = false }) {
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                strings.all,
+                                color = if (category == null) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                            )
+                        },
+                        onClick = { shelfVM.selectCategory(null); catExpanded = false }
+                    )
+                    Category.entries.forEach { cat ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    strings.categoryLabel(cat),
+                                    color = if (cat == category) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurface
+                                )
+                            },
+                            onClick = { shelfVM.selectCategory(cat); catExpanded = false }
+                        )
+                    }
+                }
             }
-            items(Category.entries) { cat ->
-                FilterChip(
-                    selected = cat == category,
-                    onClick = { shelfVM.selectCategory(cat) },
-                    label = { Text(strings.categoryLabel(cat)) }
+
+            IconButton(onClick = { showSearch = !showSearch }) {
+                Icon(
+                    imageVector = Icons.Filled.Search,
+                    contentDescription = null,
+                    tint = if (showSearch) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
 
+        if (showSearch) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text(strings.searchPlaceholder) },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+        }
+
         Box(modifier = Modifier.fillMaxSize()) {
-            when (val s = state) {
-                is UiState.Loading -> LoadingBox()
-                is UiState.Error -> ErrorBox(s.message, onRetry = { shelfVM.reload() })
-                is UiState.Success -> {
-                    val allMarks = s.data
-                    val displayed = if (selectedDay != null) {
-                        allMarks.filter { it.createdTime?.startsWith(selectedDay!!) == true }
-                    } else allMarks
-
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        if (showCalendar) {
-                            ShelfCalendar(
-                                marks = allMarks,
-                                selectedDay = selectedDay,
-                                onSelectDay = { selectedDay = it }
-                            )
-                        }
-
-                        if (displayed.isEmpty()) {
-                            EmptyBox(strings.noContent)
-                        } else {
-                            val listState = rememberLazyListState()
-                            val shouldLoadMore by remember {
-                                derivedStateOf {
-                                    val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-                                    val total = listState.layoutInfo.totalItemsCount
-                                    total > 0 && last >= total - 3
-                                }
+            val query = searchQuery.trim()
+            if (selectedTag != null) {
+                TagItemsContent(
+                    tagItemsVM = tagItemsVM,
+                    query = query,
+                    onOpenItem = onOpenItem,
+                    strings = strings
+                )
+            } else {
+                when (val s = state) {
+                    is UiState.Loading -> LoadingBox()
+                    is UiState.Error -> ErrorBox(s.message, onRetry = { shelfVM.reload() })
+                    is UiState.Success -> {
+                        val allMarks = s.data
+                        val displayed = allMarks
+                            .let { list ->
+                                if (selectedDay != null) {
+                                    list.filter { it.createdTime?.startsWith(selectedDay!!) == true }
+                                } else list
                             }
-                            LaunchedEffect(shouldLoadMore) {
-                                if (shouldLoadMore) shelfVM.loadMore()
+                            .let { list ->
+                                if (query.isNotBlank()) {
+                                    list.filter { it.item?.bestTitle?.contains(query, ignoreCase = true) == true }
+                                } else list
                             }
 
-                            PullToRefreshBox(
-                                isRefreshing = refreshing,
-                                onRefresh = { shelfVM.refresh() },
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-                                    items(displayed) { mark ->
-                                        val item = mark.item
-                                        if (item != null) {
-                                            val editAction: (() -> Unit)? = if (item.uuid.isNullOrBlank()) {
-                                                null
-                                            } else {
-                                                { editingMark = mark }
-                                            }
-                                            MarkRow(
-                                                mark = mark,
-                                                onClick = { onOpenItem(item) },
-                                                onEdit = editAction
-                                            )
-                                        }
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            if (showCalendar) {
+                                ShelfCalendar(
+                                    marks = allMarks,
+                                    selectedDay = selectedDay,
+                                    onSelectDay = { selectedDay = it }
+                                )
+                            }
+
+                            if (displayed.isEmpty()) {
+                                EmptyBox(strings.noContent)
+                            } else {
+                                val listState = rememberLazyListState()
+                                val shouldLoadMore by remember {
+                                    derivedStateOf {
+                                        val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                                        val total = listState.layoutInfo.totalItemsCount
+                                        total > 0 && last >= total - 3
                                     }
-                                    if (loadingMore) {
-                                        item {
-                                            Box(
-                                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    strings.loadingMore,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                                LaunchedEffect(shouldLoadMore) {
+                                    if (shouldLoadMore) shelfVM.loadMore()
+                                }
+
+                                PullToRefreshBox(
+                                    isRefreshing = refreshing,
+                                    onRefresh = { shelfVM.refresh() },
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                                        items(displayed) { mark ->
+                                            val item = mark.item
+                                            if (item != null) {
+                                                val editAction: (() -> Unit)? = if (item.uuid.isNullOrBlank()) {
+                                                    null
+                                                } else {
+                                                    { editingMark = mark }
+                                                }
+                                                MarkRow(
+                                                    mark = mark,
+                                                    onClick = { onOpenItem(item) },
+                                                    onEdit = editAction
                                                 )
+                                            }
+                                        }
+                                        if (loadingMore) {
+                                            item {
+                                                Box(
+                                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(
+                                                        strings.loadingMore,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -241,6 +356,58 @@ fun ShelfPage(
                         editingMark = null
                     }
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TagItemsContent(
+    tagItemsVM: TagItemsViewModel,
+    query: String,
+    onOpenItem: (ItemBrief) -> Unit,
+    strings: com.krelinnbios.neodblite.ui.i18n.AppStrings
+) {
+    val state by tagItemsVM.state.collectAsState()
+    val loadingMore by tagItemsVM.loadingMore.collectAsState()
+
+    when (val s = state) {
+        is UiState.Loading -> LoadingBox()
+        is UiState.Error -> ErrorBox(s.message)
+        is UiState.Success -> {
+            val displayed = if (query.isNotBlank()) {
+                s.data.filter { it.bestTitle.contains(query, ignoreCase = true) }
+            } else s.data
+
+            if (displayed.isEmpty()) {
+                EmptyBox(strings.noContent)
+            } else {
+                val listState = rememberLazyListState()
+                val shouldLoadMore by remember {
+                    derivedStateOf {
+                        val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                        val total = listState.layoutInfo.totalItemsCount
+                        total > 0 && last >= total - 3
+                    }
+                }
+                LaunchedEffect(shouldLoadMore) {
+                    if (shouldLoadMore) tagItemsVM.loadMore()
+                }
+                LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                    items(displayed) { item ->
+                        ItemRow(item = item, onClick = { onOpenItem(item) })
+                    }
+                    if (loadingMore) {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(strings.loadingMore, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
             }
         }
     }

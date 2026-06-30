@@ -8,6 +8,8 @@ import com.krelinnbios.neodblite.data.model.NeoUser
 import com.krelinnbios.neodblite.data.model.PagedCollectionItems
 import com.krelinnbios.neodblite.data.model.PagedCollections
 import com.krelinnbios.neodblite.data.model.PagedMarks
+import com.krelinnbios.neodblite.data.model.PagedTagItems
+import com.krelinnbios.neodblite.data.model.PagedTags
 import com.krelinnbios.neodblite.data.model.SearchResult
 import okhttp3.ResponseBody
 import retrofit2.Response
@@ -83,4 +85,13 @@ interface NeoDBApi {
         @Path("uuid") uuid: String,
         @Query("page") page: Int
     ): PagedCollectionItems
+
+    @GET("api/me/tag/")
+    suspend fun myTags(@Query("page") page: Int): PagedTags
+
+    @GET("api/me/tag/{uuid}/item/")
+    suspend fun tagItems(
+        @Path("uuid") uuid: String,
+        @Query("page") page: Int
+    ): PagedTagItems
 }

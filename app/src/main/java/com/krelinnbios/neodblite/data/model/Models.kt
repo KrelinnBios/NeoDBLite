@@ -1,5 +1,6 @@
 package com.krelinnbios.neodblite.data.model
 
+import com.google.gson.annotations.JsonAdapter
 import com.google.gson.annotations.SerializedName
 
 /**
@@ -23,15 +24,16 @@ data class ItemBrief(
     val tags: List<String>? = null,
     @SerializedName("external_resources") val externalResources: List<ExternalResource>? = null,
 
-    // 类目特有的常见字段（可空）。
-    @SerializedName("author") val author: List<String>? = null,
+    // 类目特有的常见字段（可空）。部分实例会把人员字段返回成对象数组，
+    // 统一用 FlexibleStringListDeserializer 兼容「字符串/对象」两种形态。
+    @SerializedName("author") @JsonAdapter(FlexibleStringListDeserializer::class) val author: List<String>? = null,
     @SerializedName("pub_house") val pubHouse: String? = null,
     @SerializedName("pub_year") val pubYear: Int? = null,
     val year: Int? = null,
-    val director: List<String>? = null,
-    val actor: List<String>? = null,
-    val genre: List<String>? = null,
-    val artist: List<String>? = null,
+    @JsonAdapter(FlexibleStringListDeserializer::class) val director: List<String>? = null,
+    @JsonAdapter(FlexibleStringListDeserializer::class) val actor: List<String>? = null,
+    @JsonAdapter(FlexibleStringListDeserializer::class) val genre: List<String>? = null,
+    @JsonAdapter(FlexibleStringListDeserializer::class) val artist: List<String>? = null,
 ) {
     /** 优先展示标题：display_title 优先，回退 title。 */
     val bestTitle: String

@@ -63,6 +63,7 @@ data class AppStrings(
     val searchToStart: String,
     val noSearchResults: String,
     val recentSearches: String,
+    val clearInput: String,
     val collections: String,
     val itemsCount: String,
     val noContent: String,
@@ -264,12 +265,13 @@ data class AppStrings(
         ShelfType.DROPPED -> "中断"
     }
 
+    // 英文措辞对齐 NeoDB 网页端：to read/to watch…、reading/watching…、completed/watched…。
     private fun shelfLabelEn(shelf: ShelfType, category: Category?): String = when (shelf) {
         ShelfType.WISHLIST -> when (category) {
-            Category.BOOK -> "Want to read"
-            Category.MUSIC, Category.PODCAST -> "Want to listen"
-            Category.GAME -> "Want to play"
-            else -> "Want to watch"
+            Category.BOOK -> "To read"
+            Category.MUSIC, Category.PODCAST -> "To listen"
+            Category.GAME -> "To play"
+            else -> "To watch"
         }
         ShelfType.PROGRESS -> when (category) {
             Category.BOOK -> "Reading"
@@ -278,7 +280,7 @@ data class AppStrings(
             else -> "Watching"
         }
         ShelfType.COMPLETE -> when (category) {
-            Category.BOOK -> "Read"
+            Category.BOOK -> "Completed"
             Category.MUSIC, Category.PODCAST -> "Listened"
             Category.GAME -> "Played"
             else -> "Watched"
@@ -362,6 +364,7 @@ val ZH_HANS = AppStrings(
     searchToStart = "按搜索键开始搜索",
     noSearchResults = "没有找到相关条目",
     recentSearches = "最近搜索",
+    clearInput = "清空",
     collections = "我的合集",
     itemsCount = "条目",
     noContent = "暂无内容",
@@ -469,6 +472,7 @@ val ZH_HANT = ZH_HANS.copy(
     searchToStart = "按搜尋鍵開始搜尋",
     noSearchResults = "找不到相關條目",
     recentSearches = "最近搜尋",
+    clearInput = "清空",
     collections = "我的合集",
     itemsCount = "條目",
     noContent = "暫無內容",
@@ -575,6 +579,7 @@ val JA = ZH_HANS.copy(
     searchToStart = "検索キーで検索開始",
     noSearchResults = "関連する項目が見つかりません",
     recentSearches = "最近の検索",
+    clearInput = "クリア",
     collections = "マイコレクション",
     itemsCount = "件",
     noContent = "コンテンツはありません",
@@ -682,6 +687,7 @@ val EN = ZH_HANS.copy(
     searchToStart = "Press search to begin",
     noSearchResults = "No matching items",
     recentSearches = "Recent searches",
+    clearInput = "Clear",
     collections = "My collections",
     itemsCount = "items",
     noContent = "No content yet",

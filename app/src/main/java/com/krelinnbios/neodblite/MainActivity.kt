@@ -56,6 +56,7 @@ import com.krelinnbios.neodblite.ui.page.DiscoverPage
 import com.krelinnbios.neodblite.ui.page.ItemDetailPage
 import com.krelinnbios.neodblite.ui.page.LoginPage
 import com.krelinnbios.neodblite.ui.page.ProfilePage
+import com.krelinnbios.neodblite.ui.page.SearchPage
 import com.krelinnbios.neodblite.ui.page.ShelfPage
 import com.krelinnbios.neodblite.ui.theme.AppTheme
 import com.krelinnbios.neodblite.ui.theme.AppThemePreference
@@ -259,7 +260,18 @@ private fun MainScaffold(
             modifier = Modifier.fillMaxSize().padding(padding)
         ) {
             composable("discover") {
-                DiscoverPage(discoverVM = discoverVM, searchVM = searchVM, onOpenItem = openItem)
+                DiscoverPage(
+                    discoverVM = discoverVM,
+                    onOpenSearch = { navController.navigate("search") },
+                    onOpenItem = openItem
+                )
+            }
+            composable("search") {
+                SearchPage(
+                    searchVM = searchVM,
+                    onBack = { navController.popBackStack() },
+                    onOpenItem = openItem
+                )
             }
             composable("shelf") {
                 ShelfPage(shelfVM = shelfVM, onOpenItem = openItem)
@@ -316,10 +328,8 @@ private fun MainScaffold(
                     onSearchTag = { tag ->
                         searchVM.onQueryChange(tag)
                         searchVM.submit()
-                        navController.navigate("discover") {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        navController.navigate("search") {
                             launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 )

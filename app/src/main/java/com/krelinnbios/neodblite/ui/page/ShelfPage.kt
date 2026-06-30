@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Search
@@ -27,8 +28,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -54,6 +53,7 @@ import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.data.model.Tag
 import com.krelinnbios.neodblite.data.model.Visibility
 import com.krelinnbios.neodblite.ui.UiState
+import com.krelinnbios.neodblite.ui.component.AdaptiveTabRow
 import com.krelinnbios.neodblite.ui.component.EmptyBox
 import com.krelinnbios.neodblite.ui.component.ErrorBox
 import com.krelinnbios.neodblite.ui.component.ItemRow
@@ -105,15 +105,13 @@ fun ShelfPage(
     val shelves = ShelfType.entries
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TabRow(selectedTabIndex = shelves.indexOf(shelfType)) {
-            shelves.forEach { type ->
-                Tab(
-                    selected = type == shelfType,
-                    onClick = { shelfVM.selectShelf(type) },
-                    text = { Text(strings.shelfLabel(type, category)) }
-                )
-            }
-        }
+        // 自适应页签：标签短就等宽铺满，长（英文/日文）才横向滚动。
+        AdaptiveTabRow(
+            tabs = shelves,
+            selectedIndex = shelves.indexOf(shelfType),
+            label = { strings.shelfLabel(it, category) },
+            onSelect = { shelfVM.selectShelf(it) }
+        )
 
         // 工具栏：四个按钮均匀分布，顺序为 日历 / 类型 / 标签 / 搜索。
         Row(
@@ -250,6 +248,13 @@ fun ShelfPage(
                 onValueChange = { searchQuery = it },
                 placeholder = { Text(strings.searchPlaceholder) },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Filled.Close, contentDescription = strings.clearInput)
+                        }
+                    }
+                },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
             )

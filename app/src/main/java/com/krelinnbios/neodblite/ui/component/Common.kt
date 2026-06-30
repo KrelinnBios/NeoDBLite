@@ -152,7 +152,9 @@ fun ItemGridCard(item: ItemBrief, onClick: () -> Unit, modifier: Modifier = Modi
     }
 }
 
-/** 书架行：在条目行下方补一行「我的评分 + 短评」。 */
+/**
+ * 书架行：封面 + 标题，然后依次是「我的评分（星）」「我写的短评」，最底为全站评分（数字/10）。
+ */
 @Composable
 fun MarkRow(
     mark: MarkSchema,
@@ -162,11 +164,69 @@ fun MarkRow(
 ) {
     val item = mark.item ?: return
     val strings = LocalAppStrings.current
-    Column(modifier = modifier) {
-        val editAction = onEdit
-        val trailingContent: (@Composable () -> Unit)? = if (editAction != null) {
-            {
-                IconButton(onClick = editAction) {
+    val myGrade = mark.ratingGrade?.takeIf { it > 0 }
+    val myComment = mark.commentText?.takeIf { it.isNotBlank() }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+    ) {
+        CoverImage(
+            url = item.coverImageUrl,
+            modifier = Modifier.width(60.dp).height(84.dp)
+        )
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.bestTitle,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            if (myGrade != null) {
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RatingStars(rating = myGrade.toDouble())
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "${strings.myRating} $myGrade/10",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            if (myComment != null) {
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    text = myComment,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(Modifier.height(4.dp))
+            val cat = Category.fromApi(item.category ?: item.type)
+                ?.let { strings.categoryLabel(it) }.orEmpty()
+            val site = if (item.rating == null || item.rating <= 0.0) strings.noRating
+            else "${Format.ratingText(item.rating)}/10"
+            Text(
+                text = if (cat.isNotBlank()) "$cat · $site" else site,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        if (onEdit != null) {
+            Spacer(Modifier.width(8.dp))
+            Box(modifier = Modifier.align(Alignment.CenterVertically)) {
+                IconButton(onClick = onEdit) {
                     Icon(
                         imageVector = Icons.Filled.Edit,
                         contentDescription = strings.editMark,
@@ -174,30 +234,6 @@ fun MarkRow(
                     )
                 }
             }
-        } else null
-        ItemRow(
-            item = item,
-            onClick = onClick,
-            trailing = trailingContent
-        )
-        val grade = mark.ratingGrade?.takeIf { it > 0 }
-        val comment = mark.commentText?.takeIf { it.isNotBlank() }
-        if (grade != null || comment != null) {
-            val mine = buildString {
-                if (grade != null) append("${strings.myRating} $grade/10")
-                if (comment != null) {
-                    if (isNotEmpty()) append(" · ")
-                    append(comment)
-                }
-            }
-            Text(
-                text = mine,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(start = 88.dp, end = 16.dp, bottom = 10.dp)
-            )
         }
     }
 }

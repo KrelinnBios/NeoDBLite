@@ -11,5 +11,7 @@ data class CommunityEntry(
     val author: String,
     val action: String,
     val content: String,
-    val url: String?
+    val url: String?,
+    /** 评论者评分，0~10；无评分为 null。 */
+    val rating: Double? = null
 )

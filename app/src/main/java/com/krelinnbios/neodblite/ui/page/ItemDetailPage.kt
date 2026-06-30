@@ -307,11 +307,11 @@ private fun DetailContent(
             }
         }
 
-        MyMarkCard(item = item, mark = mark)
-
-        CommunitySection(community = community, browserUrl = remember(item) { itemWebUrl(item) })
-
         val browserUrl = remember(item) { itemWebUrl(item) }
+
+        MyMarkCard(item = item, mark = mark, browserUrl = browserUrl)
+
+        CommunitySection(community = community, browserUrl = browserUrl)
         if (!browserUrl.isNullOrBlank()) {
             Spacer(Modifier.height(16.dp))
             OutlinedButton(
@@ -328,8 +328,9 @@ private fun DetailContent(
 
 /** 来源与社区内容之间：展示我自己的评分与短评，排版与社区卡片一致。 */
 @Composable
-private fun MyMarkCard(item: ItemBrief, mark: MarkSchema?) {
+private fun MyMarkCard(item: ItemBrief, mark: MarkSchema?, browserUrl: String?) {
     val strings = LocalAppStrings.current
+    val context = LocalContext.current
     if (mark == null) return
     val grade = mark.ratingGrade?.takeIf { it > 0 }
     val comment = mark.commentText?.takeIf { it.isNotBlank() }
@@ -339,7 +340,13 @@ private fun MyMarkCard(item: ItemBrief, mark: MarkSchema?) {
     val shelf = ShelfType.fromApi(mark.shelfType)
     Spacer(Modifier.height(20.dp))
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                browserUrl?.takeIf { it.isNotBlank() }?.let { url ->
+                    Modifier.clickable { Browser.open(context, url) }
+                } ?: Modifier
+            ),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {

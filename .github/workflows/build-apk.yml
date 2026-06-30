@@ -45,9 +45,6 @@ jobs:
       - name: Install Android SDK 34
         run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
-      - name: Grant Gradle wrapper permission
-        run: chmod +x ./gradlew
-
       # Release 触发时版本号必须从 tag 推导，否则 APK 永远是 build.gradle.kts 里的
       # 默认版本（1.0.0/1），应用内更新会把新版误判为已安装版本，提示死循环。
       - name: Derive app version from release tag

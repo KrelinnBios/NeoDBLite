@@ -6,6 +6,7 @@ import com.krelinnbios.neodblite.data.model.Category
 import com.krelinnbios.neodblite.data.model.MarkInRequest
 import com.krelinnbios.neodblite.data.model.MarkSchema
 import com.krelinnbios.neodblite.data.model.ShelfType
+import com.krelinnbios.neodblite.data.model.Tag
 import com.krelinnbios.neodblite.global.App
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.friendlyMessage
@@ -39,8 +40,28 @@ class ShelfViewModel : ViewModel() {
     private val _toast = MutableStateFlow<String?>(null)
     val toast: StateFlow<String?> = _toast.asStateFlow()
 
+    private val _userTags = MutableStateFlow<List<Tag>>(emptyList())
+    val userTags: StateFlow<List<Tag>> = _userTags.asStateFlow()
+
     init {
         reload()
+        loadTags()
+    }
+
+    /** 拉取当前账号的全部标签（用于标签筛选下拉）。 */
+    fun loadTags() {
+        viewModelScope.launch {
+            val all = mutableListOf<Tag>()
+            var p = 1
+            while (p <= 20) {
+                val result = repo.myTags(p).getOrNull() ?: break
+                all.addAll(result.data)
+                if (result.data.isEmpty() || p >= result.pages) break
+                p++
+            }
+            _userTags.value = all.filter { !it.uuid.isNullOrBlank() && it.bestTitle.isNotBlank() }
+                .sortedBy { it.bestTitle }
+        }
     }
 
     fun refresh() {

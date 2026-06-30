@@ -6,6 +6,8 @@ import com.krelinnbios.neodblite.data.model.CommunityEntry
 import com.krelinnbios.neodblite.data.model.CommunityEntryType
 import com.krelinnbios.neodblite.data.model.PagedCollectionItems
 import com.krelinnbios.neodblite.data.model.PagedCollections
+import com.krelinnbios.neodblite.data.model.PagedTagItems
+import com.krelinnbios.neodblite.data.model.PagedTags
 import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.MarkInRequest
 import com.krelinnbios.neodblite.data.model.MarkSchema
@@ -44,6 +46,11 @@ class NeoDBRepository(private val client: NeoDBClient) {
 
     suspend fun collectionItems(uuid: String, page: Int): Result<PagedCollectionItems> =
         io { api.collectionItems(uuid, page) }
+
+    suspend fun myTags(page: Int): Result<PagedTags> = io { api.myTags(page) }
+
+    suspend fun tagItems(uuid: String, page: Int): Result<PagedTagItems> =
+        io { api.tagItems(uuid, page) }
 
     /** 用条目的 api_url/url（相对 baseUrl）拉详情。 */
     suspend fun item(path: String): Result<ItemBrief> = io {

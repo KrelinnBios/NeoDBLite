@@ -20,6 +20,8 @@
 
 NeoDB Lite is an unofficial Android client for [NeoDB](https://neodb.social) and compatible instances, allowing you to browse, search, and bookmark books, films, TV series, music, games, podcasts, and performances on your phone.
 
+The following only covers features NeoDB Lite currently provides.
+
 ## Features
 
 ### Browse / Discover

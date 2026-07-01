@@ -25,22 +25,26 @@ NeoDB Lite is an unofficial Android client for [NeoDB](https://neodb.social) and
 ### Browse / Discover
 
 - Instance login: enter your NeoDB instance domain and authenticate via OAuth.
-- Discover feed: browse trending content by category — books, films, TV, music, games, podcasts, and performances.
-- Item search: search across all categories or filter by a specific category with paginated results.
-- Item details: view cover, title, rating, description, tags, and your current bookmark status.
+- Discover feed: browse trending content by category — books, films, TV, music, games, podcasts, and performances — in a grid view; long-press an item to bookmark it on the spot.
+- Item search: a dedicated search screen for cross-category or category-scoped search with paginated results, recent search history (select, delete individually, or clear all), and long-press-to-bookmark on results too.
+- Item details: view cover, title, rating, description, tags (tap a tag to search by it), external source links (Douban, IMDb, TMDB, Bangumi, etc.), and your current bookmark status.
 - Community content: read public comments, reviews, and notes on item detail pages, with a link to the web version for more.
 
-### Bookmark Management
+### Bookmarking & Shelf
 
-- Bookmarking: set shelf status (want to read / reading / read / dropped), 0–10 rating, short comment, and visibility; supports editing and deleting bookmarks.
-- My shelf: browse your bookmarks by shelf status with category filtering, and a calendar view for review.
-- Profile page: view account info, shelf overview, recently completed items, and common settings.
+- Bookmark editing: set shelf status (want to read / reading / read / dropped, with category-specific wording), 0–10 rating, short comment, tags, and visibility; optionally sync to the Fediverse; supports editing and deleting bookmarks.
+- My shelf: browse your bookmarks by shelf status with pagination, filter by category or by tag (tag filtering shows all items under that tag across shelf statuses), filter by title keyword, and review a calendar view of daily bookmark activity.
+
+### Collections & Profile
+
+- Collections: browse your collections and the items inside each one (currently read-only; creating or editing collections isn't supported yet).
+- Profile page: view avatar, bio, shelf statistics (tap to jump to the corresponding shelf), recently completed items, and a collections entry point.
 
 ### Preferences
 
 - Theme switching: multiple color themes to choose from.
 - Language switching: interface available in 简体中文, 繁體中文, 日本語, and English.
-- App updates: automatically checks for new versions on startup (can be disabled in settings), supports in-app download, system installer integration, download retry, and manual download.
+- App updates: automatically checks for new versions on startup (can be disabled in settings), supports in-app download with multi-source fallback, version and signature verification, system installer integration, download retry, manual download, plus feedback and logout entries.
 
 ## Screenshots
 

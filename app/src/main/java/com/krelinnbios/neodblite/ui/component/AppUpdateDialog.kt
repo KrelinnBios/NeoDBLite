@@ -207,7 +207,13 @@ fun AppUpdateFailureDialog(reason: String, onDismiss: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.surface,
         titleContentColor = MaterialTheme.colorScheme.onSurface,
         textContentColor = MaterialTheme.colorScheme.onSurface,
-        title = { Text(strings.checkUpdateFailed) },
+        title = {
+            Text(
+                text = strings.checkUpdateFailed,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        },
         text = { Text(strings.openDownloadPageHint) },
         confirmButton = {
             Button(

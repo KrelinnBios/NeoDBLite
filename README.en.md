@@ -18,35 +18,21 @@
 
 ## About
 
-NeoDB Lite is an unofficial Android client for [NeoDB](https://neodb.social) and compatible instances, allowing you to browse, search, and bookmark books, films, TV series, music, games, podcasts, and performances on your phone.
+NeoDB Lite is an unofficial Android client for [NeoDB](https://neodb.social) and compatible instances. It helps you browse, search, and bookmark books, films, TV series, music, games, podcasts, and performances from your phone.
 
-The following only covers features NeoDB Lite currently provides.
+This README only describes features currently available in NeoDB Lite.
 
 ## Features
 
-### Browse / Discover
-
-- Instance login: enter your NeoDB instance domain and authenticate via OAuth.
-- Discover feed: browse trending content by category — books, films, TV, music, games, podcasts, and performances — in a grid view; long-press an item to bookmark it on the spot.
-- Item search: a dedicated search screen for cross-category or category-scoped search with paginated results, recent search history (select, delete individually, or clear all), and long-press-to-bookmark on results too.
-- Item details: view cover, title, rating, description, tags (tap a tag to search by it), external source links (Douban, IMDb, TMDB, Bangumi, etc.), and your current bookmark status.
-- Community content: read public comments, reviews, and notes on item detail pages, with a link to the web version for more.
-
-### Bookmarking & Shelf
-
-- Bookmark editing: set shelf status (want to read / reading / read / dropped, with category-specific wording), 0–10 rating, short comment, tags, and visibility; optionally sync to the Fediverse; supports editing and deleting bookmarks.
-- My shelf: browse your bookmarks by shelf status with pagination, filter by category or by tag (tag filtering shows all items under that tag across shelf statuses), filter by title keyword, and review a calendar view of daily bookmark activity.
-
-### Collections & Profile
-
-- Collections: browse your collections and the items inside each one (currently read-only; creating or editing collections isn't supported yet).
-- Profile page: view avatar, bio, shelf statistics (tap to jump to the corresponding shelf), recently completed items, and a collections entry point.
-
-### Preferences
-
-- Theme switching: multiple color themes to choose from.
-- Language switching: interface available in 简体中文, 繁體中文, 日本語, and English.
-- App updates: automatically checks for new versions on startup (can be disabled in settings), supports in-app download with multi-source fallback, version and signature verification, system installer integration, download retry, manual download, plus feedback and logout entries.
+- Instance login: enter a NeoDB instance domain and authorize through the browser.
+- Discover feed: browse trending books, films, TV, music, games, podcasts, and performances.
+- Item search: search across all categories or within one category, with recent search history.
+- Item details: view cover, title, rating, description, tags, external links, and your bookmark status.
+- Bookmarking: set shelf status, rating, short comment, tags, visibility, and edit or delete existing marks.
+- My shelf: browse your marks by status, category, tag, or title keyword, with a calendar view.
+- Collections: view your collections and the items inside them.
+- Profile: view avatar, bio, shelf statistics, recently completed items, and collection entry points.
+- Preferences: switch themes and interface languages, check for updates, send feedback, or log out.
 
 ## Screenshots
 
@@ -70,22 +56,21 @@ Android 7.0 (API 24) or later.
 
 ### Updates
 
-The app silently checks for new versions via the GitHub Releases API on startup (auto-check can be disabled in settings). You can also manually check for updates in the settings page. When an update is found, a dialog shows the new version and release notes, offering three options: "Manual Download", "Later", and "Download & Install".
+The app can check for new versions on startup or from settings. When an update is available, you can download and install it in the app, or download it manually from Releases.
 
-The download progress bar shows percentage and source info (supports GitHub direct link and mirror fallback). After download, the APK version and signature are verified before launching the system installer. If download or installation fails, the dialog displays the error and allows a retry.
+If Android refuses to install over the current build, uninstall the old version first and then install the APK from Releases again.
 
-## Technical Details
+## Data & Safety
 
-- Tech stack: Kotlin, Jetpack Compose, Material 3, Retrofit, OkHttp.
-- Auth: Mastodon-compatible OAuth authorization code flow to connect to NeoDB instances.
-- Updates: version check via GitHub Releases API, with APK version and signature verification on downloaded packages.
+- Login authorization is used only to access the NeoDB or compatible instance you choose.
+- Item data, covers, ratings, and comments come from your instance and its related sources.
+- Install APKs only from this repository's Releases page or another trusted source.
 
 ## Disclaimer
 
 - This is an unofficial client and is not affiliated with the NeoDB project or any instance operators.
-- Please abide by the rules, content policies, and applicable laws of your instance.
-- Item data, cover images, ratings, comments, and community content are sourced from NeoDB or compatible instances; copyright and content responsibility belong to their original sources.
-- Access tokens are used solely for accessing your instance from this app. Do not install modified builds from untrusted sources.
+- Please follow the rules, content policies, and applicable laws of the instance you use.
+- Platform content remains the responsibility of its original sources.
 
 ## License
 

@@ -249,20 +249,20 @@ private fun DetailContent(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                if (!markSummary.isNullOrBlank()) {
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        text = markSummary,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
 
         Spacer(Modifier.height(16.dp))
         Button(onClick = onMark, modifier = Modifier.fillMaxWidth()) {
             Text(if (markSummary.isNullOrBlank()) strings.mark else strings.editMark)
-        }
-        if (!markSummary.isNullOrBlank()) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = markSummary,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary
-            )
         }
 
         val tags = item.tags.orEmpty().filter { it.isNotBlank() }

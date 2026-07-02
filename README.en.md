@@ -53,6 +53,8 @@ Download the APK from [Releases](https://github.com/KrelinnBios/NeoDBLite/releas
 
 Android 7.0 (API 24) or later.
 
+The APK currently ships `arm64-v8a` and `armeabi-v7a` builds only.
+
 ### Updates
 
 The app can check for new versions on startup or from settings. When an update is available, you can download and install it in the app, or download it manually from Releases.

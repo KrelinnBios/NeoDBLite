@@ -17,8 +17,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -86,7 +86,7 @@ fun ShelfCalendar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { ymOverride = shiftMonth(ym, -1) }) {
-                Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null)
             }
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 Text(
@@ -105,7 +105,7 @@ fun ShelfCalendar(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             IconButton(onClick = { pickYear-- }) {
-                                Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = null)
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null)
                             }
                             Text(
                                 text = pickYear.toString(),
@@ -113,7 +113,7 @@ fun ShelfCalendar(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             IconButton(onClick = { pickYear++ }) {
-                                Icon(Icons.Filled.KeyboardArrowRight, contentDescription = null)
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
                             }
                         }
                         Spacer(Modifier.height(4.dp))
@@ -150,7 +150,7 @@ fun ShelfCalendar(
                 }
             }
             IconButton(onClick = { ymOverride = shiftMonth(ym, 1) }) {
-                Icon(Icons.Filled.KeyboardArrowRight, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
             }
         }
 

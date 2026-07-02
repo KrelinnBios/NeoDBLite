@@ -83,6 +83,7 @@ fun ShelfPage(
     val refreshing by shelfVM.refreshing.collectAsState()
     val toast by shelfVM.toast.collectAsState()
     val userTags by shelfVM.userTags.collectAsState()
+    val tagsLoadFailed by shelfVM.tagsLoadFailed.collectAsState()
 
     var showCalendar by remember { mutableStateOf(false) }
     var selectedDay by remember(shelfType, category) { mutableStateOf<String?>(null) }
@@ -184,7 +185,8 @@ fun ShelfPage(
                 contentAlignment = Alignment.Center
             ) {
                 var tagsExpanded by remember { mutableStateOf(false) }
-                IconButton(onClick = { tagsExpanded = true }) {
+                // 打开下拉时顺带重新拉取，避免启动时一次静默失败导致列表一直为空。
+                IconButton(onClick = { shelfVM.loadTags(); tagsExpanded = true }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Label,
                         contentDescription = null,
@@ -210,6 +212,23 @@ fun ShelfPage(
                         onClick = { selectedTag = null; tagsExpanded = false },
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
                     )
+                    if (userTags.isEmpty()) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    if (tagsLoadFailed) strings.networkError else strings.noContent,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            onClick = {
+                                if (tagsLoadFailed) shelfVM.loadTags() else tagsExpanded = false
+                            },
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                        )
+                    }
                     userTags.forEach { tag ->
                         DropdownMenuItem(
                             text = {

@@ -151,46 +151,49 @@ fun ItemDetailPage(
     }
 
     val current = itemState
-    if (showSheet && current is UiState.Success && current.data.uuid != null) {
-        val uuid = current.data.uuid!!
-        val category = Category.fromApi(current.data.category ?: current.data.type)
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ModalBottomSheet(
-            onDismissRequest = { showSheet = false },
-            sheetState = sheetState
-        ) {
-            MarkEditor(
-                category = category,
-                existing = mark?.let {
-                    MarkDraft(
-                        shelf = ShelfType.fromApi(it.shelfType) ?: ShelfType.WISHLIST,
-                        grade = it.ratingGrade ?: 0,
-                        comment = it.commentText.orEmpty(),
-                        visibility = Visibility.fromApi(it.visibility),
-                        tags = it.tags,
-                        shareToFediverse = false
-                    )
-                },
-                hasExisting = mark != null,
-                onSave = { draft ->
-                    detailVM.saveMark(
-                        uuid,
-                        MarkInRequest(
-                            shelfType = draft.shelf.apiValue,
-                            visibility = draft.visibility.apiValue,
-                            commentText = draft.comment.ifBlank { null },
-                            ratingGrade = draft.grade.takeIf { it > 0 },
-                            tags = draft.tags,
-                            postToFediverse = draft.shareToFediverse
+    if (showSheet && current is UiState.Success) {
+        val item = current.data
+        val uuid = item.uuid
+        if (uuid != null) {
+            val category = Category.fromApi(item.category ?: item.type)
+            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            ModalBottomSheet(
+                onDismissRequest = { showSheet = false },
+                sheetState = sheetState
+            ) {
+                MarkEditor(
+                    category = category,
+                    existing = mark?.let {
+                        MarkDraft(
+                            shelf = ShelfType.fromApi(it.shelfType) ?: ShelfType.WISHLIST,
+                            grade = it.ratingGrade ?: 0,
+                            comment = it.commentText.orEmpty(),
+                            visibility = Visibility.fromApi(it.visibility),
+                            tags = it.tags,
+                            shareToFediverse = false
                         )
-                    )
-                    showSheet = false
-                },
-                onDelete = {
-                    detailVM.deleteMark(uuid)
-                    showSheet = false
-                }
-            )
+                    },
+                    hasExisting = mark != null,
+                    onSave = { draft ->
+                        detailVM.saveMark(
+                            uuid,
+                            MarkInRequest(
+                                shelfType = draft.shelf.apiValue,
+                                visibility = draft.visibility.apiValue,
+                                commentText = draft.comment.ifBlank { null },
+                                ratingGrade = draft.grade.takeIf { it > 0 },
+                                tags = draft.tags,
+                                postToFediverse = draft.shareToFediverse
+                            )
+                        )
+                        showSheet = false
+                    },
+                    onDelete = {
+                        detailVM.deleteMark(uuid)
+                        showSheet = false
+                    }
+                )
+            }
         }
     }
 }
@@ -278,12 +281,12 @@ private fun DetailContent(
             }
         }
 
-        if (!item.brief.isNullOrBlank()) {
+        item.brief?.takeIf { it.isNotBlank() }?.let { brief ->
             Spacer(Modifier.height(20.dp))
             Text(strings.intro, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(6.dp))
             Text(
-                text = item.brief!!,
+                text = brief,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

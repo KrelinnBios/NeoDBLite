@@ -12,8 +12,18 @@ enum class AppLanguage(val label: String) {
     SYSTEM("跟随系统"),
     ZH_HANS("简体中文"),
     ZH_HANT("繁體中文"),
-    JA("日本語"),
     EN("English");
+
+    /**
+     * 当前语言对应的 Accept-Language 请求头。NeoDB 服务端按此本地化
+     * display_title、brief 等字段，与网页端行为一致。
+     */
+    val acceptLanguage: String
+        get() = when (resolve(this)) {
+            ZH_HANS -> "zh-Hans,zh;q=0.9"
+            ZH_HANT -> "zh-Hant,zh;q=0.9"
+            else -> "en"
+        }
 
     companion object {
         val DEFAULT = SYSTEM
@@ -27,7 +37,6 @@ enum class AppLanguage(val label: String) {
             return when {
                 tag.startsWith("zh-hant") || tag.contains("-tw") || tag.contains("-hk") || tag.contains("-mo") -> ZH_HANT
                 tag.startsWith("zh") -> ZH_HANS
-                tag.startsWith("ja") -> JA
                 else -> EN
             }
         }
@@ -38,13 +47,19 @@ object AppLanguagePreference {
     private const val PREFS_NAME = "neodb_ui"
     private const val KEY_LANGUAGE = "app_language"
 
+    /** 内存缓存，供 OkHttp 拦截器同步读取（拦截器不能挂起），load/save 时更新。 */
+    @Volatile
+    var current: AppLanguage = AppLanguage.DEFAULT
+        private set
+
     fun load(context: Context): AppLanguage {
         val name = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getString(KEY_LANGUAGE, null)
-        return AppLanguage.fromName(name)
+        return AppLanguage.fromName(name).also { current = it }
     }
 
     fun save(context: Context, language: AppLanguage) {
+        current = language
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .putString(KEY_LANGUAGE, language.name)
@@ -164,7 +179,6 @@ data class AppStrings(
         return when (this) {
             ZH_HANS -> c.zhHans
             ZH_HANT -> c.zhHant
-            JA -> c.ja
             EN -> c.en
             else -> c.zhHans
         }
@@ -173,7 +187,6 @@ data class AppStrings(
     fun shelfLabel(shelf: ShelfType, category: Category?): String = when (this) {
         ZH_HANS -> shelfLabelZhHans(shelf, category)
         ZH_HANT -> shelfLabelZhHant(shelf, category)
-        JA -> shelfLabelJa(shelf, category)
         EN -> shelfLabelEn(shelf, category)
         else -> shelfLabelZhHans(shelf, category)
     }
@@ -181,7 +194,6 @@ data class AppStrings(
     fun visibilityLabel(visibility: Visibility): String = when (this) {
         ZH_HANS -> visibility.zhHans
         ZH_HANT -> visibility.zhHant
-        JA -> visibility.ja
         EN -> visibility.en
         else -> visibility.zhHans
     }
@@ -190,7 +202,6 @@ data class AppStrings(
         AppLanguage.SYSTEM -> this.languageSystem
         AppLanguage.ZH_HANS -> "简体中文"
         AppLanguage.ZH_HANT -> "繁體中文"
-        AppLanguage.JA -> "日本語"
         AppLanguage.EN -> "English"
     }
 
@@ -206,7 +217,6 @@ data class AppStrings(
         get() = when (this) {
             ZH_HANS -> "跟随系统"
             ZH_HANT -> "跟隨系統"
-            JA -> "システムに合わせる"
             EN -> "System"
             else -> "跟随系统"
         }
@@ -241,28 +251,6 @@ data class AppStrings(
             ShelfType.COMPLETE -> verbs.third
             ShelfType.DROPPED -> "擱置"
         }
-    }
-
-    private fun shelfLabelJa(shelf: ShelfType, category: Category?): String = when (shelf) {
-        ShelfType.WISHLIST -> when (category) {
-            Category.BOOK -> "読みたい"
-            Category.MUSIC, Category.PODCAST -> "聴きたい"
-            Category.GAME -> "遊びたい"
-            else -> "見たい"
-        }
-        ShelfType.PROGRESS -> when (category) {
-            Category.BOOK -> "読んでいる"
-            Category.MUSIC, Category.PODCAST -> "聴いている"
-            Category.GAME -> "遊んでいる"
-            else -> "見ている"
-        }
-        ShelfType.COMPLETE -> when (category) {
-            Category.BOOK -> "読了"
-            Category.MUSIC, Category.PODCAST -> "聴いた"
-            Category.GAME -> "遊んだ"
-            else -> "見た"
-        }
-        ShelfType.DROPPED -> "中断"
     }
 
     // 英文措辞对齐 NeoDB 网页端：to read/to watch…、reading/watching…、completed/watched…。
@@ -309,16 +297,6 @@ private val Category.zhHant: String get() = when (this) {
     Category.PERFORMANCE -> "演出"
 }
 
-private val Category.ja: String get() = when (this) {
-    Category.BOOK -> "本"
-    Category.MOVIE -> "映画"
-    Category.TV -> "ドラマ"
-    Category.MUSIC -> "音楽"
-    Category.GAME -> "ゲーム"
-    Category.PODCAST -> "ポッドキャスト"
-    Category.PERFORMANCE -> "公演"
-}
-
 private val Category.en: String get() = when (this) {
     Category.BOOK -> "Books"
     Category.MOVIE -> "Movies"
@@ -339,12 +317,6 @@ private val Visibility.zhHant: String get() = when (this) {
     Visibility.PUBLIC -> "公開"
     Visibility.FOLLOWERS -> "僅關注者"
     Visibility.PRIVATE -> "僅自己"
-}
-
-private val Visibility.ja: String get() = when (this) {
-    Visibility.PUBLIC -> "公開"
-    Visibility.FOLLOWERS -> "フォロワーのみ"
-    Visibility.PRIVATE -> "自分のみ"
 }
 
 private val Visibility.en: String get() = when (this) {
@@ -568,114 +540,6 @@ val ZH_HANT = ZH_HANS.copy(
     noBio = "暫無簡介"
 )
 
-val JA = ZH_HANS.copy(
-    navSettings = "設定",
-    language = "言語",
-    themeColor = "テーマカラー",
-    all = "すべて",
-    searchScope = "検索範囲を選択",
-    searchPlaceholder = "名前を入力して検索",
-    search = "検索",
-    searchToStart = "検索キーで検索開始",
-    noSearchResults = "関連する項目が見つかりません",
-    recentSearches = "最近の検索",
-    clearInput = "クリア",
-    collections = "マイコレクション",
-    itemsCount = "件",
-    noContent = "コンテンツはありません",
-    loading = "読み込み中…",
-    loadingMore = "読み込み中…",
-    retry = "再試行",
-    noRating = "評価なし",
-    unnamedItem = "無題の項目",
-    networkError = "ネットワークエラー。しばらくしてから再試行してください",
-    myRating = "自分の評価",
-    loginSubtitle = "NeoDB インスタンスにログインして記録を始める",
-    instanceHost = "インスタンスのドメイン",
-    login = "ログイン",
-    loginHint = "アプリ内で認可ページを開き、認可後に自動でログインします。NeoDB は分散型プラットフォームです。既定のインスタンスは neodb.social ですが、互換インスタンスも指定できます。",
-    detail = "詳細",
-    back = "戻る",
-    peopleCountSuffix = "人",
-    mark = "記録",
-    editMark = "記録を編集",
-    intro = "紹介",
-    sources = "ソース",
-    externalLink = "外部リンク",
-    openInBrowser = "ブラウザで開く",
-    status = "ステータス",
-    rating = "評価",
-    unrated = "未評価",
-    visibility = "公開範囲",
-    shortCommentOptional = "短いコメント（任意）",
-    tagsOptional = "タグ（空白またはカンマ区切り、任意）",
-    syncToFediverse = "Fediverse に同期",
-    saveMark = "記録を保存",
-    deleteMark = "記録を削除",
-    saved = "保存しました",
-    markDeleted = "記録を削除しました",
-    communityContent = "コミュニティ",
-    comments = "コメント",
-    reviews = "レビュー",
-    notes = "ノート",
-    openCommunityInBrowser = "Web 版ですべて表示",
-    noCommunityContent = "公開コンテンツはありません",
-    communityLoadFailed = "コミュニティの読み込みに失敗しました",
-    homepage = "ホームページ",
-    username = "ユーザー名",
-    displayName = "表示名",
-    openHomepage = "ホームページをブラウザで開く",
-    shelfOverview = "本棚の概要",
-    totalMarks = "記録数",
-    shelfSynced = "現在のアカウントの本棚データを同期済み",
-    recentComplete = "最近完了",
-    noCompleteItems = "完了した項目はまだありません",
-    checkUpdate = "更新を確認",
-    checking = "確認中…",
-    currentVersionPrefix = "現在のバージョン v",
-    alreadyLatest = "最新バージョンです",
-    releasesPage = "Releases ページ",
-    releasesSubtitle = "ブラウザでリリース履歴を見る",
-    appTagline = "NeoDB Lite · 非公式 NeoDB クライアント",
-    logoutTitle = "ログアウト",
-    logoutMessage = "保存されたログイントークンを削除します。続けるには再認可が必要です。",
-    logout = "ログアウト",
-    cancel = "キャンセル",
-    notLoggedIn = "未ログイン",
-    newVersionPrefix = "新しいバージョン v",
-    downloadFailedPrefix = "ダウンロード失敗: ",
-    unknownError = "不明なエラー",
-    downloading = "ダウンロード中…",
-    downloadAndInstall = "ダウンロードしてインストール",
-    goReleases = "Releases へ",
-    sourceLabelPrefix = "ソース",
-    feedback = "問題報告",
-    autoUpdateCheck = "自動バージョン更新",
-    autoUpdateCheckSubtitle = "アプリ起動時に新しいバージョンを自動確認",
-    preparingDownload = "ダウンロードを準備中…",
-    downloadingAndVerifying = "APK をダウンロード・検証中",
-    sourcePrefix = "ソース：",
-    installerOpened = "システムインストーラーが開きました。インストールに失敗した場合は、手動ダウンロードをお試しください。",
-    updateFailed = "自動更新に失敗しました：",
-    targetVersionPrefix = "対象バージョン：",
-    newVersionReleased = "新バージョンがリリースされました。",
-    manualDownload = "手動ダウンロード",
-    later = "後で",
-    retryAutoUpdate = "自動更新を再試行",
-    reopenInstaller = "インストーラーを開き直す",
-    checkUpdateFailed = "自動更新の確認に失敗しました",
-    openDownloadPage = "ダウンロードページを開く",
-    openDownloadPageHint = "GitHub Releases で手動確認・ダウンロードできます。",
-    themeBlueBlack = "ブルーブラック",
-    themeTealLight = "ティール（明）",
-    themeTealDark = "ディープグリーン",
-    themeSakura = "さくら",
-    themePurple = "ミッドナイトパープル",
-    close = "閉じる",
-    bio = "自己紹介",
-    noBio = "自己紹介はありません"
-)
-
 val EN = ZH_HANS.copy(
     navSettings = "Settings",
     language = "Language",
@@ -787,7 +651,6 @@ val EN = ZH_HANS.copy(
 fun appStringsFor(language: AppLanguage): AppStrings = when (AppLanguage.resolve(language)) {
     AppLanguage.ZH_HANS -> ZH_HANS
     AppLanguage.ZH_HANT -> ZH_HANT
-    AppLanguage.JA -> JA
     AppLanguage.EN -> EN
     AppLanguage.SYSTEM -> ZH_HANS
 }

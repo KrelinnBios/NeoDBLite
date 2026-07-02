@@ -72,7 +72,6 @@ fun SearchPage(
     searchVM: SearchViewModel,
     onOpenItem: (ItemBrief) -> Unit
 ) {
-    val strings = LocalAppStrings.current
     val query by searchVM.query.collectAsState()
     val searchCategory by searchVM.category.collectAsState()
     val searchState by searchVM.state.collectAsState()

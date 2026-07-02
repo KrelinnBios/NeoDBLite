@@ -181,7 +181,6 @@ private fun MainScaffold(
     currentLanguage: AppLanguage,
     onLanguageChange: (AppLanguage) -> Unit
 ) {
-    val strings = LocalAppStrings.current
     val navController = rememberNavController()
     val discoverVM: DiscoverViewModel = viewModel()
     val searchVM: SearchViewModel = viewModel()

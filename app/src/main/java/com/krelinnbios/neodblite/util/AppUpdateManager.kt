@@ -260,7 +260,7 @@ object AppUpdateManager {
                 versionCode = asset.versionCode
             }
         }
-        apkUrl = apkUrl
+        val selectedApkUrl = apkUrl
             ?: release.downloadUrl?.takeIf { it.endsWith(".apk", true) }
             ?: return null
 
@@ -268,7 +268,7 @@ object AppUpdateManager {
             versionName = latestVersion,
             versionCode = versionCode ?: release.versionCode,
             releaseNotes = release.body ?: release.releaseNotes ?: "",
-            apkUrl = apkUrl!!,
+            apkUrl = selectedApkUrl,
             releasePageUrl = release.html_url ?: release.releaseUrl ?: RELEASES_PAGE_URL
         )
     }

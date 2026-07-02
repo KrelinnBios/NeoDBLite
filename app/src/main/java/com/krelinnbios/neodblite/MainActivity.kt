@@ -192,6 +192,18 @@ private fun MainScaffold(
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = currentRoute in bottomDestinations.map { it.route }
 
+    // 语言切换后重新拉取主要页面数据，服务端会按新的 Accept-Language 返回本地化标题。
+    var refreshedLanguage by remember { mutableStateOf(currentLanguage) }
+    LaunchedEffect(currentLanguage) {
+        if (refreshedLanguage != currentLanguage) {
+            refreshedLanguage = currentLanguage
+            discoverVM.refresh()
+            searchVM.refresh()
+            shelfVM.refresh()
+            profileVM.refresh()
+        }
+    }
+
     var updateInfo by remember { mutableStateOf<AppUpdateInfo?>(null) }
     var hasCheckedAppUpdate by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current

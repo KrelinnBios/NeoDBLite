@@ -1,6 +1,7 @@
 package com.krelinnbios.neodblite.data
 
 import com.krelinnbios.neodblite.BuildConfig
+import com.krelinnbios.neodblite.ui.i18n.AppLanguagePreference
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -30,6 +31,8 @@ class NeoDBClient(private val authStore: AuthStore) {
             val builder: Request.Builder = chain.request().newBuilder()
                 .header("User-Agent", "NeoDBLite/${BuildConfig.VERSION_NAME}")
                 .header("Accept", "application/json")
+                // 服务端按 Accept-Language 本地化 display_title、brief 等字段。
+                .header("Accept-Language", AppLanguagePreference.current.acceptLanguage)
             authStore.cachedToken?.let { token ->
                 builder.header("Authorization", "Bearer $token")
             }

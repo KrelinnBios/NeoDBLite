@@ -15,6 +15,7 @@ object CommunityHtmlParser {
     private val dateRegex = Regex("""class=["']post_timestamp["'][\s\S]*?<a\b[^>]*>([\s\S]*?)</a>""", RegexOption.IGNORE_CASE)
     private val tagRegex = Regex("""<[^>]+>""")
     private val whitespaceRegex = Regex("""\s+""")
+    private val spaceBeforePunctuationRegex = Regex("""\s+([,.!?;:，。！？；：])""")
 
     private val relativeAgeRegex = Regex("""^(\d+)\s*(yr|mo|w|d|h|m|s)$""", RegexOption.IGNORE_CASE)
 
@@ -82,6 +83,7 @@ object CommunityHtmlParser {
             .replace(tagRegex, " ")
         return decodeEntities(withoutTags)
             .replace(whitespaceRegex, " ")
+            .replace(spaceBeforePunctuationRegex, "$1")
             .trim()
     }
 

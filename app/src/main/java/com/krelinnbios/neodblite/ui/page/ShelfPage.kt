@@ -18,7 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -186,7 +186,7 @@ fun ShelfPage(
                 var tagsExpanded by remember { mutableStateOf(false) }
                 IconButton(onClick = { tagsExpanded = true }) {
                     Icon(
-                        imageVector = Icons.Filled.Label,
+                        imageVector = Icons.AutoMirrored.Filled.Label,
                         contentDescription = null,
                         tint = if (selectedTag != null) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant
@@ -277,8 +277,9 @@ fun ShelfPage(
                         val allMarks = s.data
                         val displayed = allMarks
                             .let { list ->
-                                if (selectedDay != null) {
-                                    list.filter { it.createdTime?.startsWith(selectedDay!!) == true }
+                                val selectedDate = selectedDay
+                                if (selectedDate != null) {
+                                    list.filter { it.createdTime?.startsWith(selectedDate) == true }
                                 } else list
                             }
                             .let { list ->

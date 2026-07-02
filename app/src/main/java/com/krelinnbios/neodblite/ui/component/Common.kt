@@ -21,7 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.StarBorder
-import androidx.compose.material.icons.filled.StarHalf
+import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -113,7 +113,7 @@ fun RatingStars(rating: Double?, modifier: Modifier = Modifier) {
         repeat(5) { index ->
             val icon = when {
                 index < fullStars -> Icons.Filled.Star
-                index == fullStars && hasHalf -> Icons.Filled.StarHalf
+                index == fullStars && hasHalf -> Icons.AutoMirrored.Filled.StarHalf
                 else -> Icons.Filled.StarBorder
             }
             Icon(

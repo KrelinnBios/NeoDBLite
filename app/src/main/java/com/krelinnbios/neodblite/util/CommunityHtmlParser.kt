@@ -16,6 +16,29 @@ object CommunityHtmlParser {
     private val tagRegex = Regex("""<[^>]+>""")
     private val whitespaceRegex = Regex("""\s+""")
 
+    private val relativeAgeRegex = Regex("""^(\d+)\s*(yr|mo|w|d|h|m|s)$""", RegexOption.IGNORE_CASE)
+
+    /**
+     * 把站点展示的紧凑相对时间（如 "7d"、"2w"、"1mo"）换算成分钟数，用于跨类型按新旧排序；
+     * 解析不到返回 null。换算取近似值即可，只需保证单位间的大小关系正确。
+     */
+    fun relativeAgeMinutes(date: String?): Long? {
+        val text = date?.trim().orEmpty()
+        if (text.isEmpty()) return null
+        val match = relativeAgeRegex.find(text) ?: return null
+        val value = match.groupValues[1].toLongOrNull() ?: return null
+        return when (match.groupValues[2].lowercase()) {
+            "s" -> value / 60
+            "m" -> value
+            "h" -> value * 60
+            "d" -> value * 60 * 24
+            "w" -> value * 60 * 24 * 7
+            "mo" -> value * 60 * 24 * 30
+            "yr" -> value * 60 * 24 * 365
+            else -> null
+        }
+    }
+
     fun parse(type: CommunityEntryType, html: String, host: String): List<CommunityEntry> {
         if (html.isBlank() || html.contains("class=\"empty\"") || html.contains("class='empty'")) return emptyList()
         return sectionRegex.findAll(html)

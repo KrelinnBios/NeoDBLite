@@ -148,10 +148,10 @@ private fun CollectionHeader(collection: Collection) {
                 }
             }
         }
-        if (!collection.brief.isNullOrBlank()) {
+        collection.brief?.takeIf { it.isNotBlank() }?.let { brief ->
             Spacer(Modifier.height(12.dp))
             Text(
-                text = collection.brief!!,
+                text = brief,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -53,6 +53,8 @@ NeoDB Lite 是面向 [NeoDB](https://neodb.social) 及相容實例的非官方 A
 
 Android 7.0（API 24）及以上。
 
+目前 APK 僅提供 `arm64-v8a` 和 `armeabi-v7a` 架構版本。
+
 ### 更新方式
 
 應用可在啟動時或設定頁檢查新版本。偵測到更新後，可以在應用內下載並安裝，也可以前往 Releases 頁面手動下載。

@@ -26,7 +26,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.util.AppDownloadProgress
 import com.krelinnbios.neodblite.util.AppUpdateInfo
@@ -56,7 +58,15 @@ fun AppUpdateDialog(info: AppUpdateInfo, onDismiss: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.surface,
         titleContentColor = MaterialTheme.colorScheme.onSurface,
         textContentColor = MaterialTheme.colorScheme.onSurface,
-        title = { Text("${strings.newVersionPrefix}${info.versionName}") },
+        // 对齐 YamiboReaderLite 的弹窗标题视觉：Yamibo 在主题里把 headlineSmall 定为
+        // 18sp/SemiBold，本项目用 Material3 默认排版（24sp），故在此局部指定同样的字号字重。
+        title = {
+            Text(
+                text = "${strings.newVersionPrefix}${info.versionName}",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        },
         text = {
             Column(
                 modifier = Modifier
@@ -198,7 +208,13 @@ fun AppUpdateFailureDialog(reason: String, onDismiss: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.surface,
         titleContentColor = MaterialTheme.colorScheme.onSurface,
         textContentColor = MaterialTheme.colorScheme.onSurface,
-        title = { Text(strings.checkUpdateFailed) },
+        title = {
+            Text(
+                text = strings.checkUpdateFailed,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        },
         text = { Text("$reason\n\n${strings.openDownloadPageHint}") },
         confirmButton = {
             Button(

@@ -77,9 +77,10 @@ class ProfileViewModel : ViewModel() {
                 .onFailure { lastError = it }
         }
 
-        if (counts.isEmpty() && lastError != null) {
+        val error = lastError
+        if (counts.isEmpty() && error != null) {
             if (!keepOnError || _state.value !is UiState.Success) {
-                _state.value = UiState.Error(lastError!!.friendlyMessage())
+                _state.value = UiState.Error(error.friendlyMessage())
             }
         } else {
             _state.value = UiState.Success(ProfileStats(counts, recent, bio))

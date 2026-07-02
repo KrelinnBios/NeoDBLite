@@ -43,30 +43,47 @@ class ShelfViewModel : ViewModel() {
     private val _userTags = MutableStateFlow<List<Tag>>(emptyList())
     val userTags: StateFlow<List<Tag>> = _userTags.asStateFlow()
 
+    private val _tagsLoadFailed = MutableStateFlow(false)
+    val tagsLoadFailed: StateFlow<Boolean> = _tagsLoadFailed.asStateFlow()
+
+    private var loadingTags = false
+
     init {
         reload()
         loadTags()
     }
 
-    /** 拉取当前账号的全部标签（用于标签筛选下拉）。 */
+    /** 拉取当前账号的全部标签（用于标签筛选下拉）。失败时保留旧列表并置失败标记，供下拉提示与重试。 */
     fun loadTags() {
+        if (loadingTags) return
+        loadingTags = true
         viewModelScope.launch {
             val all = mutableListOf<Tag>()
             var p = 1
+            var failed = false
             while (p <= 20) {
-                val result = repo.myTags(p).getOrNull() ?: break
+                val result = repo.myTags(p).getOrNull()
+                if (result == null) {
+                    failed = true
+                    break
+                }
                 all.addAll(result.data)
                 if (result.data.isEmpty() || p >= result.pages) break
                 p++
             }
-            _userTags.value = all.filter { !it.uuid.isNullOrBlank() && it.bestTitle.isNotBlank() }
-                .sortedBy { it.bestTitle }
+            if (!failed) {
+                _userTags.value = all.filter { !it.uuid.isNullOrBlank() && it.bestTitle.isNotBlank() }
+                    .sortedBy { it.bestTitle }
+            }
+            _tagsLoadFailed.value = failed
+            loadingTags = false
         }
     }
 
     fun refresh() {
         if (_refreshing.value) return
         _refreshing.value = true
+        loadTags()
         viewModelScope.launch {
             repo.shelf(_shelfType.value, _category.value, 1)
                 .onSuccess {
@@ -130,6 +147,7 @@ class ShelfViewModel : ViewModel() {
                 .onSuccess {
                     _toast.value = "已保存"
                     reload()
+                    loadTags()
                 }
                 .onFailure { _toast.value = it.friendlyMessage() }
         }
@@ -142,6 +160,7 @@ class ShelfViewModel : ViewModel() {
                 .onSuccess {
                     _toast.value = "已删除标记"
                     reload()
+                    loadTags()
                 }
                 .onFailure { _toast.value = it.friendlyMessage() }
         }

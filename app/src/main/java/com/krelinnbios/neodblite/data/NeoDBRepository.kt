@@ -74,6 +74,11 @@ class NeoDBRepository(private val client: NeoDBClient) {
                     CommunityHtmlParser.parse(type, html, host)
                 }.getOrElse { emptyList() }
             }
+                // 三类内容合并后按发布时间新到旧排序，默认只展示最新的 10 条；
+                // 每类片段本身已是新到旧，稳定排序保持同龄条目的原有顺序，
+                // 解析不出时间的排在最后。更多内容走详情页的“打开网页端查看全部”。
+                .sortedBy { CommunityHtmlParser.relativeAgeMinutes(it.date) ?: Long.MAX_VALUE }
+                .take(10)
         }
     }
 

@@ -94,6 +94,6 @@ private class RetryInterceptor(private val maxRetries: Int) : Interceptor {
             }
         }
         lastError?.let { throw it }
-        return response!!
+        return response ?: throw IOException("GET retry failed without response")
     }
 }

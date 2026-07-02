@@ -26,9 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.util.AppDownloadProgress
 import com.krelinnbios.neodblite.util.AppUpdateInfo
@@ -58,14 +56,7 @@ fun AppUpdateDialog(info: AppUpdateInfo, onDismiss: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.surface,
         titleContentColor = MaterialTheme.colorScheme.onSurface,
         textContentColor = MaterialTheme.colorScheme.onSurface,
-        // 参考 YamiboReaderLite：标题只比正文略大（18sp / SemiBold）。
-        title = {
-            Text(
-                text = "${strings.newVersionPrefix}${info.versionName}",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        },
+        title = { Text("${strings.newVersionPrefix}${info.versionName}") },
         text = {
             Column(
                 modifier = Modifier
@@ -116,7 +107,7 @@ fun AppUpdateDialog(info: AppUpdateInfo, onDismiss: () -> Unit) {
 
                     UpdateDownloadState.FAILED -> {
                         Text(
-                            text = "${strings.updateFailed}${failureMessage}",
+                            text = "${strings.updateFailed}${failureMessage}\n\n${strings.updateFailedHint}",
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -207,14 +198,8 @@ fun AppUpdateFailureDialog(reason: String, onDismiss: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.surface,
         titleContentColor = MaterialTheme.colorScheme.onSurface,
         textContentColor = MaterialTheme.colorScheme.onSurface,
-        title = {
-            Text(
-                text = strings.checkUpdateFailed,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        },
-        text = { Text(strings.openDownloadPageHint) },
+        title = { Text(strings.checkUpdateFailed) },
+        text = { Text("$reason\n\n${strings.openDownloadPageHint}") },
         confirmButton = {
             Button(
                 onClick = {

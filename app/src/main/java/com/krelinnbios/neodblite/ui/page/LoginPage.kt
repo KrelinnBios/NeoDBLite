@@ -72,10 +72,10 @@ fun LoginPage(authVM: AuthViewModel) {
             Text(strings.login)
         }
 
-        if (!message.isNullOrBlank()) {
+        message?.takeIf { it.isNotBlank() }?.let { text ->
             Spacer(Modifier.height(16.dp))
             Text(
-                text = message!!,
+                text = text,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
                 textAlign = TextAlign.Center

@@ -26,7 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -334,7 +334,7 @@ private fun ProfileSettingsDialog(
                     }
                 )
 
-                Divider(modifier = Modifier.padding(vertical = 6.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
 
                 ClickRow(
                     title = strings.checkUpdate,
@@ -359,7 +359,7 @@ private fun ProfileSettingsDialog(
                     Browser.open(context, FEEDBACK_URL)
                 }
 
-                Divider(modifier = Modifier.padding(vertical = 6.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
 
                 ClickRow(title = strings.logout) { showLogoutConfirm = true }
                 ClickRow(title = strings.close) { onDismiss() }

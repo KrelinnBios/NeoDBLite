@@ -10,6 +10,12 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/KrelinnBios/NeoDBLite/releases"><img src="https://img.shields.io/github/v/release/KrelinnBios/NeoDBLite?style=flat-square&color=2f6f73" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/Platform-Android%207.0%2B-247344?style=flat-square" alt="Android 7.0+">
+  <img src="https://img.shields.io/badge/License-MIT-1f5f9c?style=flat-square" alt="MIT License">
+</p>
+
+<p align="center">
   <a href="README.md">简体中文</a> ·
   <a href="README.zh-TW.md">繁體中文</a> ·
   <a href="README.en.md">English</a>

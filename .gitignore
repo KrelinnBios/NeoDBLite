@@ -2,6 +2,7 @@
 .idea/
 .agents/
 .claude/
+.codex/
 .vscode/
 *.iml
 
@@ -29,6 +30,7 @@ signing.properties
 
 # Misc
 .DS_Store
+Thumbs.db
 .env*
 .gitee_token
 .gh-cli/

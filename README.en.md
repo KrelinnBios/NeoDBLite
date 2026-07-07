@@ -30,12 +30,10 @@ This README only describes features currently available in NeoDB Lite.
 ## Features
 
 - Instance login: enter a NeoDB instance domain and authorize through the browser.
-- Discover feed: browse trending books, films, TV, music, games, podcasts, and performances.
-- Item search: search across all categories or within one category, with recent search history.
-- Item details: view cover, title, rating, description, tags, external links, and your bookmark status.
-- Bookmarking: set shelf status, rating, short comment, tags, visibility, and edit or delete existing marks.
-- My shelf: browse your marks by status, category, tag, or title keyword, with a calendar view.
-- Collections: view your collections and the items inside them.
+- Discover feed: browse trending books, films, TV, music, games, podcasts, and performances; long-press an item to bookmark it quickly.
+- Item search: search across all categories or within one category, with recent search history; long-press a result to bookmark it quickly too.
+- Item details: view cover, title, description, tags, external links, community rating and reviews, and set shelf status, rating, short comment, tags, and visibility to bookmark the item.
+- My shelf: browse your marks by status, category, tag, or title keyword, edit or delete them, with a calendar view.
 - Profile: view avatar, bio, shelf statistics, recently completed items, and collection entry points.
 - Preferences: switch themes and interface languages, check for updates, send feedback, or log out.
 

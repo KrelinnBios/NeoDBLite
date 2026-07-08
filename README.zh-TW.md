@@ -1,7 +1,7 @@
 # NeoDBLite
 
 <p align="center">
-  <img src="icon/logo.svg" width="128" alt="NeoDB Lite logo">
+  <img src="icon/icon.svg" width="128" alt="NeoDB Lite icon">
 </p>
 
 <p align="center">

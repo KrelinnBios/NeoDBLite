@@ -8,6 +8,7 @@ import com.krelinnbios.neodblite.data.model.MarkSchema
 import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.data.model.Tag
 import com.krelinnbios.neodblite.global.App
+import com.krelinnbios.neodblite.global.MarkEventBus
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.friendlyMessage
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -148,6 +149,7 @@ class ShelfViewModel : ViewModel() {
                     _toast.value = "已保存"
                     reload()
                     loadTags()
+                    MarkEventBus.markDirty()
                 }
                 .onFailure { _toast.value = it.friendlyMessage() }
         }
@@ -161,6 +163,7 @@ class ShelfViewModel : ViewModel() {
                     _toast.value = "已删除标记"
                     reload()
                     loadTags()
+                    MarkEventBus.markDirty()
                 }
                 .onFailure { _toast.value = it.friendlyMessage() }
         }

@@ -1,6 +1,7 @@
 package com.krelinnbios.neodblite.ui.page
 
 import android.widget.Toast
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -20,6 +21,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +49,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -283,12 +286,37 @@ private fun DetailContent(
 
         item.brief?.takeIf { it.isNotBlank() }?.let { brief ->
             Spacer(Modifier.height(20.dp))
-            Text(strings.intro, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+            var briefExpanded by remember(item.uuid) { mutableStateOf(false) }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { briefExpanded = !briefExpanded },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = strings.intro,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+                val briefArrowRotation by animateFloatAsState(
+                    targetValue = if (briefExpanded) 180f else 0f,
+                    label = "briefArrowRotation"
+                )
+                Icon(
+                    imageVector = Icons.Filled.ArrowDropDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.rotate(briefArrowRotation)
+                )
+            }
             Spacer(Modifier.height(6.dp))
             Text(
                 text = brief,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = if (briefExpanded) Int.MAX_VALUE else 4,
+                overflow = TextOverflow.Ellipsis
             )
         }
 

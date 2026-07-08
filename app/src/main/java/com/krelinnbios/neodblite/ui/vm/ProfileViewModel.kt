@@ -6,6 +6,7 @@ import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.NeoUser
 import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.global.App
+import com.krelinnbios.neodblite.global.MarkEventBus
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.friendlyMessage
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,7 +36,9 @@ class ProfileViewModel : ViewModel() {
         val changed = boundUser != user || boundHost != host
         boundUser = user
         boundHost = host
-        if (changed || _state.value is UiState.Loading) load()
+        // 消费一次「标记已变动」信号：即使 user/host 未变，只要有标记在别处被改过，进入本页也要重新拉取。
+        val markedDirty = MarkEventBus.consumeDirty()
+        if (changed || markedDirty || _state.value is UiState.Loading) load()
     }
 
     fun load() {

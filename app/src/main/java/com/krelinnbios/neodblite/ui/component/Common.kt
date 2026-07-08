@@ -236,7 +236,8 @@ fun MarkRow(
             val cat = Category.fromApi(item.category ?: item.type)
                 ?.let { strings.categoryLabel(it) }.orEmpty()
             val site = if (item.rating == null || item.rating <= 0.0) strings.noRating
-            else "${Format.ratingText(item.rating)}/10"
+            else "${Format.ratingText(item.rating)}/10" +
+                (item.ratingCount?.let { " ($it${strings.peopleCountSuffix})" } ?: "")
             Text(
                 text = if (cat.isNotBlank()) "$cat · $site" else site,
                 style = MaterialTheme.typography.labelSmall,

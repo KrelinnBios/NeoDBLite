@@ -29,6 +29,7 @@ import com.krelinnbios.neodblite.data.model.MarkSchema
 import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.data.model.Visibility
 import com.krelinnbios.neodblite.global.App
+import com.krelinnbios.neodblite.global.MarkEventBus
 import com.krelinnbios.neodblite.ui.friendlyMessage
 import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import kotlinx.coroutines.launch
@@ -97,7 +98,10 @@ fun QuickMarkSheet(item: ItemBrief, onDismiss: () -> Unit) {
                                 postToFediverse = draft.shareToFediverse
                             )
                         )
-                            .onSuccess { Toast.makeText(context, strings.saved, Toast.LENGTH_SHORT).show() }
+                            .onSuccess {
+                                Toast.makeText(context, strings.saved, Toast.LENGTH_SHORT).show()
+                                MarkEventBus.markDirty()
+                            }
                             .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
                     }
                     onDismiss()
@@ -105,7 +109,10 @@ fun QuickMarkSheet(item: ItemBrief, onDismiss: () -> Unit) {
                 onDelete = {
                     scope.launch {
                         repo.deleteMark(uuid)
-                            .onSuccess { Toast.makeText(context, strings.markDeleted, Toast.LENGTH_SHORT).show() }
+                            .onSuccess {
+                                Toast.makeText(context, strings.markDeleted, Toast.LENGTH_SHORT).show()
+                                MarkEventBus.markDirty()
+                            }
                             .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
                     }
                     onDismiss()

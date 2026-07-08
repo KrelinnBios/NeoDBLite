@@ -7,6 +7,7 @@ import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.MarkInRequest
 import com.krelinnbios.neodblite.data.model.MarkSchema
 import com.krelinnbios.neodblite.global.App
+import com.krelinnbios.neodblite.global.MarkEventBus
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.friendlyMessage
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -74,6 +75,7 @@ class DetailViewModel : ViewModel() {
                 .onSuccess {
                     _toast.value = "已保存"
                     repo.mark(uuid).onSuccess { _mark.value = it }
+                    MarkEventBus.markDirty()
                 }
                 .onFailure { _toast.value = it.friendlyMessage() }
             _saving.value = false
@@ -87,6 +89,7 @@ class DetailViewModel : ViewModel() {
                 .onSuccess {
                     _mark.value = null
                     _toast.value = "已删除标记"
+                    MarkEventBus.markDirty()
                 }
                 .onFailure { _toast.value = it.friendlyMessage() }
             _saving.value = false

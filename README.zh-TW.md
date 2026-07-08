@@ -25,8 +25,6 @@
 
 NeoDB Lite 是面向 [NeoDB](https://neodb.social) 及相容實例的非官方 Android 客戶端，用於在手機上瀏覽、搜尋和標記書影音遊等條目。
 
-以下說明僅描述 NeoDB Lite 目前實際提供的功能。
-
 ## 功能概覽
 
 - 實例登入：填寫 NeoDB 實例域名後，透過瀏覽器授權登入。
@@ -51,7 +49,7 @@ NeoDB Lite 是面向 [NeoDB](https://neodb.social) 及相容實例的非官方 A
 
 ### 安裝使用
 
-從 [Releases](https://github.com/KrelinnBios/NeoDBLite/releases) 下載 APK 後安裝。
+從 [Releases](https://github.com/KrelinnBios/NeoDBLite/releases) 下載 `NeoDB Lite.apk` 後安裝。
 
 ### 系統需求
 
@@ -67,7 +65,7 @@ Android 7.0（API 24）及以上。
 
 ## 資料與安全
 
-- 登入授權只用於存取所選擇的 NeoDB 或相容實例。
+- 登入授權只用於存取所選擇的 NeoDB 或相容實例，登入狀態保存在裝置本機。
 - 條目資料、封面、評分和評論來自所登入實例及其關聯來源。
 - 請只從本倉庫 Releases 或可信來源安裝 APK，避免使用來源不明的改包版本。
 

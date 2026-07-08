@@ -25,8 +25,6 @@
 
 NeoDB Lite is an unofficial Android client for [NeoDB](https://neodb.social) and compatible instances. It helps you browse, search, and bookmark books, films, TV series, music, games, podcasts, and performances from your phone.
 
-This README only describes features currently available in NeoDB Lite.
-
 ## Features
 
 - Instance login: enter a NeoDB instance domain and authorize through the browser.
@@ -51,7 +49,7 @@ This README only describes features currently available in NeoDB Lite.
 
 ### Installation
 
-Download the APK from [Releases](https://github.com/KrelinnBios/NeoDBLite/releases) and install it.
+Download `NeoDB Lite.apk` from [Releases](https://github.com/KrelinnBios/NeoDBLite/releases) and install it.
 
 ### Requirements
 
@@ -67,7 +65,7 @@ If Android refuses to install over the current build, uninstall the old version 
 
 ## Data & Safety
 
-- Login authorization is used only to access the NeoDB or compatible instance you choose.
+- Login authorization is used only to access the NeoDB or compatible instance you choose, and the sign-in state is stored locally on your device.
 - Item data, covers, ratings, and comments come from your instance and its related sources.
 - Install APKs only from this repository's Releases page or another trusted source.
 

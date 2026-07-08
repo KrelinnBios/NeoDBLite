@@ -40,7 +40,8 @@ data class AppDownloadProgress(
 sealed interface AppUpdateCheckResult {
     data object NoUpdate : AppUpdateCheckResult
     data class UpdateAvailable(val info: AppUpdateInfo) : AppUpdateCheckResult
-    data class Failed(val reason: String) : AppUpdateCheckResult
+    /** [isRateLimited] 为 true 表示 GitHub 明确返回 403/429（限流），而非网络不通。 */
+    data class Failed(val reason: String, val isRateLimited: Boolean = false) : AppUpdateCheckResult
 }
 
 object AppUpdateManager {
@@ -69,7 +70,7 @@ object AppUpdateManager {
     private const val MAX_APK_SIZE_BYTES = 512L * 1024L * 1024L
     private const val APK_BASE_NAME = "NeoDB Lite"
 
-    // 自动检查的最小间隔：GitHub 未认证接口限流约每小时 60 次，频繁启动会触发 403。
+    // 自动检查的最小间隔：GitHub 未认证接口限流约每小时 60 次（按 IP 计），频繁启动会触发 403。
     private const val AUTO_CHECK_MIN_INTERVAL_MS = 6L * 60 * 60 * 1000
     private const val PREFS_NAME = "app_update"
     private const val KEY_LAST_AUTO_CHECK = "last_auto_update_check_ms"
@@ -101,6 +102,8 @@ object AppUpdateManager {
     /**
      * 启动时的自动检查：带节流。距上次自动检查不足 [AUTO_CHECK_MIN_INTERVAL_MS] 时返回 null（跳过），
      * 避免频繁启动把 GitHub 未认证接口的限流额度用尽（403）。
+     * 只有拿到确定结论（有更新/无更新）才记录时间戳；网络失败不占用节流窗口，下次启动会重试。
+     * 例外：GitHub 明确返回限流（403/429）时也记录时间戳——此时重试只会加剧限流，等满一个窗口再试。
      */
     suspend fun checkForUpdateAuto(context: Context): AppUpdateCheckResult? =
         withContext(Dispatchers.IO) {
@@ -109,8 +112,11 @@ object AppUpdateManager {
             if (System.currentTimeMillis() - last < AUTO_CHECK_MIN_INTERVAL_MS) {
                 return@withContext null
             }
-            prefs.edit().putLong(KEY_LAST_AUTO_CHECK, System.currentTimeMillis()).apply()
-            checkForUpdate()
+            val result = checkForUpdate()
+            if (result !is AppUpdateCheckResult.Failed || result.isRateLimited) {
+                prefs.edit().putLong(KEY_LAST_AUTO_CHECK, System.currentTimeMillis()).apply()
+            }
+            result
         }
 
     fun isAutoUpdateEnabled(context: Context): Boolean {
@@ -145,12 +151,13 @@ object AppUpdateManager {
         try {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    val reason = when (response.code) {
-                        403, 429 -> "GitHub 接口暂时不可用（${response.code}，通常是短时间内请求过于频繁触发限流），请稍后再试或前往 Releases 页面手动查看"
-                        404 -> "仓库暂无正式发布版本"
+                    val rateLimited = response.code == 403 || response.code == 429
+                    val reason = when {
+                        rateLimited -> "GitHub 接口暂时不可用（${response.code}，通常是短时间内请求过于频繁触发限流），请稍后再试或前往 Releases 页面手动查看"
+                        response.code == 404 -> "仓库暂无正式发布版本"
                         else -> "GitHub 返回 HTTP ${response.code}"
                     }
-                    return@withContext AppUpdateCheckResult.Failed(reason)
+                    return@withContext AppUpdateCheckResult.Failed(reason, rateLimited)
                 }
 
                 val json = response.body?.string().orEmpty()

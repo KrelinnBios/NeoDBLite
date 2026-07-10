@@ -25,7 +25,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -204,7 +203,9 @@ private fun MainScaffold(
     }
 
     var updateInfo by remember { mutableStateOf<AppUpdateInfo?>(null) }
-    var hasCheckedAppUpdate by rememberSaveable { mutableStateOf(false) }
+    // 用 remember 而非 rememberSaveable:进程被杀后从最近任务恢复时应重新检查,
+    // 否则恢复的 true 会让这次冷启动跳过检查;频率控制交给 checkForUpdateAuto 的节流。
+    var hasCheckedAppUpdate by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val isAutoUpdateEnabled = remember { AppUpdateManager.isAutoUpdateEnabled(context) }
     LaunchedEffect(isAutoUpdateEnabled) {

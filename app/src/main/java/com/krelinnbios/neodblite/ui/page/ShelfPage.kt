@@ -1,10 +1,10 @@
 package com.krelinnbios.neodblite.ui.page
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,7 +40,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -149,32 +150,23 @@ fun ShelfPage(
                 DropdownMenu(
                     expanded = catExpanded,
                     onDismissRequest = { catExpanded = false },
+                    // widthIn 在外、width(IntrinsicSize.Max) 在内：面板贴合最宽条目文本，同时不超上限。
                     modifier = Modifier
-                        .width(IntrinsicSize.Min)
                         .widthIn(max = 220.dp)
+                        .width(IntrinsicSize.Max)
                 ) {
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                strings.all,
-                                color = if (category == null) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurface
-                            )
-                        },
-                        onClick = { shelfVM.selectCategory(null); catExpanded = false },
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                    CompactMenuItem(
+                        label = strings.all,
+                        color = if (category == null) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurface,
+                        onClick = { shelfVM.selectCategory(null); catExpanded = false }
                     )
                     Category.entries.forEach { cat ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    strings.categoryLabel(cat),
-                                    color = if (cat == category) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.onSurface
-                                )
-                            },
-                            onClick = { shelfVM.selectCategory(cat); catExpanded = false },
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                        CompactMenuItem(
+                            label = strings.categoryLabel(cat),
+                            color = if (cat == category) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface,
+                            onClick = { shelfVM.selectCategory(cat); catExpanded = false }
                         )
                     }
                 }
@@ -197,51 +189,33 @@ fun ShelfPage(
                 DropdownMenu(
                     expanded = tagsExpanded,
                     onDismissRequest = { tagsExpanded = false },
+                    // widthIn 在外、width(IntrinsicSize.Max) 在内：面板贴合最宽条目文本，同时不超上限。
                     modifier = Modifier
-                        .width(IntrinsicSize.Min)
                         .widthIn(max = 240.dp)
+                        .width(IntrinsicSize.Max)
                 ) {
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                strings.all,
-                                color = if (selectedTag == null) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurface
-                            )
-                        },
-                        onClick = { selectedTag = null; tagsExpanded = false },
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                    CompactMenuItem(
+                        label = strings.all,
+                        color = if (selectedTag == null) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurface,
+                        onClick = { selectedTag = null; tagsExpanded = false }
                     )
                     if (userTags.isEmpty()) {
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    if (tagsLoadFailed) strings.networkError else strings.noContent,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            },
+                        CompactMenuItem(
+                            label = if (tagsLoadFailed) strings.networkError else strings.noContent,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
                             onClick = {
                                 if (tagsLoadFailed) shelfVM.loadTags() else tagsExpanded = false
-                            },
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                            }
                         )
                     }
                     userTags.forEach { tag ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    tag.bestTitle,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    color = if (tag.uuid == selectedTag?.uuid) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.onSurface
-                                )
-                            },
-                            onClick = { selectedTag = tag; tagsExpanded = false },
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                        CompactMenuItem(
+                            label = tag.bestTitle,
+                            color = if (tag.uuid == selectedTag?.uuid) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface,
+                            onClick = { selectedTag = tag; tagsExpanded = false }
                         )
                     }
                 }
@@ -469,4 +443,28 @@ private fun TagItemsContent(
             }
         }
     }
+}
+
+/**
+ * 下拉菜单的紧凑条目：宽度跟随文本内容，避开 DropdownMenuItem 自带的 112dp 最小宽度，
+ * 配合菜单上的 width(IntrinsicSize.Max) 让面板贴合最宽条目。
+ */
+@Composable
+private fun CompactMenuItem(
+    label: String,
+    color: Color,
+    onClick: () -> Unit,
+    style: TextStyle? = null
+) {
+    Text(
+        text = label,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        style = style ?: MaterialTheme.typography.labelLarge,
+        color = color,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    )
 }

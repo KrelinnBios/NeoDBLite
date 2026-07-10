@@ -6,21 +6,24 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -55,6 +58,10 @@ fun ShelfCalendar(
         marks.mapNotNull { it.createdTime?.takeIf { t -> t.length >= 10 }?.substring(0, 10) }
             .groupingBy { it }
             .eachCount()
+    }
+    // 有已加载标记的月份集合（yyyy-MM），用于选择器里的小圆点提示。
+    val monthsWithData = remember(counts) {
+        counts.keys.mapTo(mutableSetOf()) { it.substring(0, 7) }
     }
     val initialYm = remember(marks) {
         marks.mapNotNull { it.createdTime?.takeIf { t -> t.length >= 7 }?.substring(0, 7) }
@@ -96,62 +103,22 @@ fun ShelfCalendar(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.clickable { showPicker = true }
                 )
-                DropdownMenu(expanded = showPicker, onDismissRequest = { showPicker = false }) {
-                    var pickYear by remember { mutableStateOf(year) }
-                    Column(modifier = Modifier.padding(8.dp).width(220.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            IconButton(onClick = { pickYear-- }) {
-                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null)
-                            }
-                            Text(
-                                text = pickYear.toString(),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            IconButton(onClick = { pickYear++ }) {
-                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
-                            }
-                        }
-                        Spacer(Modifier.height(4.dp))
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(4),
-                            modifier = Modifier.fillMaxWidth().height(160.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            items((1..12).toList()) { m ->
-                                val monthStr = "%02d".format(m)
-                                val selected = ym == "%04d-%02d".format(pickYear, m)
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth().clickable {
-                                        ymOverride = "%04d-%02d".format(pickYear, m)
-                                        showPicker = false
-                                    },
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = if (selected) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.surfaceVariant
-                                ) {
-                                    Text(
-                                        text = monthStr,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        textAlign = TextAlign.Center,
-                                        color = if (selected) MaterialTheme.colorScheme.onPrimary
-                                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
             }
             IconButton(onClick = { ymOverride = shiftMonth(ym, 1) }) {
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
             }
+        }
+
+        if (showPicker) {
+            MonthPickerSheet(
+                currentYm = ym,
+                monthsWithData = monthsWithData,
+                onPick = { picked ->
+                    ymOverride = picked
+                    showPicker = false
+                },
+                onDismiss = { showPicker = false }
+            )
         }
 
         Row(modifier = Modifier.fillMaxWidth()) {
@@ -202,6 +169,93 @@ fun ShelfCalendar(
                             )
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 年月选择底部弹层：按年份分组（最新在前），每年一个 3×4 月份网格，
+ * 初始滚动到当前选中的年份；有已加载标记的月份带小圆点提示。
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MonthPickerSheet(
+    currentYm: String,
+    monthsWithData: Set<String>,
+    onPick: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val selectedYear = currentYm.substring(0, 4).toIntOrNull()
+        ?: Calendar.getInstance().get(Calendar.YEAR)
+    val thisYear = Calendar.getInstance().get(Calendar.YEAR)
+    val minDataYear = monthsWithData.minOfOrNull { it.substring(0, 4).toIntOrNull() ?: thisYear }
+        ?: thisYear
+    val years = (minOf(minDataYear, selectedYear)..maxOf(thisYear, selectedYear)).toList().asReversed()
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = years.indexOf(selectedYear).coerceAtLeast(0)
+    )
+
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            contentPadding = PaddingValues(bottom = 24.dp)
+        ) {
+            items(years, key = { it }) { y ->
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = y.toString(),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                    (1..12).chunked(4).forEachIndexed { rowIndex, rowMonths ->
+                        if (rowIndex > 0) Spacer(Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            rowMonths.forEach { m ->
+                                val ymStr = "%04d-%02d".format(y, m)
+                                val selected = ymStr == currentYm
+                                val hasData = ymStr in monthsWithData
+                                Surface(
+                                    modifier = Modifier.weight(1f).clickable { onPick(ymStr) },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (selected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.surfaceVariant
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp)
+                                    ) {
+                                        Text(
+                                            text = "%02d".format(m),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = if (selected) MaterialTheme.colorScheme.onPrimary
+                                            else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(Modifier.height(3.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .size(4.dp)
+                                                .clip(CircleShape)
+                                                .background(
+                                                    when {
+                                                        !hasData -> Color.Transparent
+                                                        selected -> MaterialTheme.colorScheme.onPrimary
+                                                        else -> MaterialTheme.colorScheme.primary
+                                                    }
+                                                )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(14.dp))
                 }
             }
         }

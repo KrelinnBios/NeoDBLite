@@ -5,10 +5,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -35,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.krelinnbios.neodblite.data.model.MarkSchema
 import java.util.Calendar
@@ -93,7 +92,7 @@ fun ShelfCalendar(
             IconButton(onClick = { ymOverride = shiftMonth(ym, -1) }) {
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null)
             }
-            BoxWithConstraints(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 Text(
                     text = ym,
                     style = MaterialTheme.typography.titleSmall,
@@ -101,79 +100,80 @@ fun ShelfCalendar(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.clickable { showPicker = true }
                 )
-                // 弹窗内容宽 220dp + 左右 8dp 内边距；默认贴锚点左缘，加偏移让它在标题区水平居中。
-                val menuWidth = 236.dp
-                DropdownMenu(
-                    expanded = showPicker,
-                    onDismissRequest = { showPicker = false },
-                    offset = DpOffset(x = (maxWidth - menuWidth) / 2, y = 0.dp)
-                ) {
-                    var pickYear by remember { mutableStateOf(year) }
-                    Column(modifier = Modifier.padding(8.dp).width(220.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            IconButton(onClick = { pickYear-- }) {
-                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null)
-                            }
-                            Text(
-                                text = pickYear.toString(),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            IconButton(onClick = { pickYear++ }) {
-                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
-                            }
-                        }
-                        Spacer(Modifier.height(4.dp))
-                        // 固定 3×4 网格。此前用 LazyVerticalGrid 时，Popup 内的条目复用会让
-                        // 切换年份后残留旧的选中高亮；12 个月静态排布即可，无需懒加载。
-                        (1..12).chunked(4).forEachIndexed { rowIndex, rowMonths ->
-                            if (rowIndex > 0) Spacer(Modifier.height(4.dp))
+                // 选择器浏览的年份。放在弹窗外层（普通组合）持有，打开弹窗时重置为当前浏览年份。
+                var pickYear by remember(showPicker) { mutableStateOf(year) }
+                // 锚点盒子与弹窗内容同宽（220dp + 左右 8dp 内边距）并在标题区居中，
+                // 弹窗贴锚点左缘展开即水平居中；盒子无点击处理，不影响标题的点按。
+                // 注意不要把 DropdownMenu 放进 BoxWithConstraints：其内容是子组合，
+                // 弹窗挂在子组合下会不随状态重组（年份切换/点选全部失效）。
+                Box(modifier = Modifier.width(236.dp).fillMaxHeight()) {
+                    DropdownMenu(expanded = showPicker, onDismissRequest = { showPicker = false }) {
+                        Column(modifier = Modifier.padding(8.dp).width(220.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                rowMonths.forEach { m ->
-                                    val ymStr = "%04d-%02d".format(pickYear, m)
-                                    val selected = ym == ymStr
-                                    val hasData = ymStr in monthsWithData
-                                    Surface(
-                                        modifier = Modifier.weight(1f).clickable {
-                                            ymOverride = ymStr
-                                            showPicker = false
-                                        },
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = if (selected) MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme.surfaceVariant
-                                    ) {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
+                                IconButton(onClick = { pickYear-- }) {
+                                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null)
+                                }
+                                Text(
+                                    text = pickYear.toString(),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                IconButton(onClick = { pickYear++ }) {
+                                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                                }
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            // 固定 3×4 网格。此前用 LazyVerticalGrid 时，Popup 内的条目复用会让
+                            // 切换年份后残留旧的选中高亮；12 个月静态排布即可，无需懒加载。
+                            (1..12).chunked(4).forEachIndexed { rowIndex, rowMonths ->
+                                if (rowIndex > 0) Spacer(Modifier.height(4.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    rowMonths.forEach { m ->
+                                        val ymStr = "%04d-%02d".format(pickYear, m)
+                                        val selected = ym == ymStr
+                                        val hasData = ymStr in monthsWithData
+                                        Surface(
+                                            modifier = Modifier.weight(1f).clickable {
+                                                ymOverride = ymStr
+                                                showPicker = false
+                                            },
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = if (selected) MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.surfaceVariant
                                         ) {
-                                            Text(
-                                                text = "%02d".format(m),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                textAlign = TextAlign.Center,
-                                                color = if (selected) MaterialTheme.colorScheme.onPrimary
-                                                else MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                            Spacer(Modifier.height(2.dp))
-                                            // 有已加载标记的月份显示小圆点，选中态用反色。
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(4.dp)
-                                                    .clip(CircleShape)
-                                                    .background(
-                                                        when {
-                                                            !hasData -> Color.Transparent
-                                                            selected -> MaterialTheme.colorScheme.onPrimary
-                                                            else -> MaterialTheme.colorScheme.primary
-                                                        }
-                                                    )
-                                            )
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
+                                            ) {
+                                                Text(
+                                                    text = "%02d".format(m),
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    textAlign = TextAlign.Center,
+                                                    color = if (selected) MaterialTheme.colorScheme.onPrimary
+                                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                Spacer(Modifier.height(2.dp))
+                                                // 有已加载标记的月份显示小圆点，选中态用反色。
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(4.dp)
+                                                        .clip(CircleShape)
+                                                        .background(
+                                                            when {
+                                                                !hasData -> Color.Transparent
+                                                                selected -> MaterialTheme.colorScheme.onPrimary
+                                                                else -> MaterialTheme.colorScheme.primary
+                                                            }
+                                                        )
+                                                )
+                                            }
                                         }
                                     }
                                 }

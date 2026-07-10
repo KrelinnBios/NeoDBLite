@@ -85,6 +85,8 @@ fun ShelfPage(
     val toast by shelfVM.toast.collectAsState()
     val userTags by shelfVM.userTags.collectAsState()
     val tagsLoadFailed by shelfVM.tagsLoadFailed.collectAsState()
+    val categoryCounts by shelfVM.categoryCounts.collectAsState()
+    val allCategoryCount = categoryCounts.takeIf { it.size == Category.entries.size }?.values?.sum()
 
     var showCalendar by remember { mutableStateOf(false) }
     var selectedDay by remember(shelfType, category) { mutableStateOf<String?>(null) }
@@ -156,14 +158,14 @@ fun ShelfPage(
                         .width(IntrinsicSize.Max)
                 ) {
                     CompactMenuItem(
-                        label = strings.all,
+                        label = menuLabel(strings.all, allCategoryCount),
                         color = if (category == null) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurface,
                         onClick = { shelfVM.selectCategory(null); catExpanded = false }
                     )
                     Category.entries.forEach { cat ->
                         CompactMenuItem(
-                            label = strings.categoryLabel(cat),
+                            label = menuLabel(strings.categoryLabel(cat), categoryCounts[cat]),
                             color = if (cat == category) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.onSurface,
                             onClick = { shelfVM.selectCategory(cat); catExpanded = false }
@@ -212,7 +214,7 @@ fun ShelfPage(
                     }
                     userTags.forEach { tag ->
                         CompactMenuItem(
-                            label = tag.bestTitle,
+                            label = menuLabel(tag.bestTitle, tag.itemCount),
                             color = if (tag.uuid == selectedTag?.uuid) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.onSurface,
                             onClick = { selectedTag = tag; tagsExpanded = false }
@@ -468,3 +470,6 @@ private fun CompactMenuItem(
             .padding(horizontal = 16.dp, vertical = 12.dp)
     )
 }
+
+private fun menuLabel(label: String, count: Int?): String =
+    count?.let { "$label ($it)" } ?: label

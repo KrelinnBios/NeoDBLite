@@ -11,6 +11,8 @@ import com.krelinnbios.neodblite.global.App
 import com.krelinnbios.neodblite.global.MarkEventBus
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.friendlyMessage
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -47,10 +49,14 @@ class ShelfViewModel : ViewModel() {
     private val _tagsLoadFailed = MutableStateFlow(false)
     val tagsLoadFailed: StateFlow<Boolean> = _tagsLoadFailed.asStateFlow()
 
+    private val _categoryCounts = MutableStateFlow<Map<Category, Int>>(emptyMap())
+    val categoryCounts: StateFlow<Map<Category, Int>> = _categoryCounts.asStateFlow()
+
     private var loadingTags = false
 
     init {
         reload()
+        loadCategoryCounts()
         loadTags()
     }
 
@@ -81,10 +87,25 @@ class ShelfViewModel : ViewModel() {
         }
     }
 
+    private fun loadCategoryCounts() {
+        val type = _shelfType.value
+        viewModelScope.launch {
+            val counts = Category.entries
+                .map { category ->
+                    async { category to repo.shelf(type, category, 1).getOrNull()?.count }
+                }
+                .awaitAll()
+                .mapNotNull { (category, count) -> count?.let { category to it } }
+                .toMap()
+            if (_shelfType.value == type) _categoryCounts.value = counts
+        }
+    }
+
     fun refresh() {
         if (_refreshing.value) return
         _refreshing.value = true
         loadTags()
+        loadCategoryCounts()
         viewModelScope.launch {
             repo.shelf(_shelfType.value, _category.value, 1)
                 .onSuccess {
@@ -103,6 +124,7 @@ class ShelfViewModel : ViewModel() {
         if (_shelfType.value == type) return
         _shelfType.value = type
         reload()
+        loadCategoryCounts()
     }
 
     fun selectCategory(category: Category?) {
@@ -149,6 +171,7 @@ class ShelfViewModel : ViewModel() {
                     _toast.value = "已保存"
                     reload()
                     loadTags()
+                    loadCategoryCounts()
                     MarkEventBus.markDirty()
                 }
                 .onFailure { _toast.value = it.friendlyMessage() }
@@ -163,6 +186,7 @@ class ShelfViewModel : ViewModel() {
                     _toast.value = "已删除标记"
                     reload()
                     loadTags()
+                    loadCategoryCounts()
                     MarkEventBus.markDirty()
                 }
                 .onFailure { _toast.value = it.friendlyMessage() }

@@ -129,6 +129,7 @@ fun ShelfCalendar(
                             // 固定 3×4 网格。此前用 LazyVerticalGrid 时，Popup 内的条目复用会让
                             // 切换年份后残留旧的选中高亮；12 个月静态排布即可，无需懒加载。
                             (1..12).chunked(4).forEachIndexed { rowIndex, rowMonths ->
+                                androidx.compose.runtime.key(pickYear, rowIndex) {
                                 if (rowIndex > 0) Spacer(Modifier.height(4.dp))
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -175,6 +176,7 @@ fun ShelfCalendar(
                                             }
                                         }
                                     }
+                                }
                                 }
                             }
                         }

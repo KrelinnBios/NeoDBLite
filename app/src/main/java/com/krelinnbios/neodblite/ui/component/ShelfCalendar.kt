@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -106,7 +105,7 @@ fun ShelfCalendar(
                 // 弹窗贴锚点左缘展开即水平居中；盒子无点击处理，不影响标题的点按。
                 // 注意不要把 DropdownMenu 放进 BoxWithConstraints：其内容是子组合，
                 // 弹窗挂在子组合下会不随状态重组（年份切换/点选全部失效）。
-                Box(modifier = Modifier.width(236.dp).fillMaxHeight()) {
+                Box(modifier = Modifier.width(236.dp).height(1.dp)) {
                     DropdownMenu(expanded = showPicker, onDismissRequest = { showPicker = false }) {
                         Column(modifier = Modifier.padding(8.dp).width(220.dp)) {
                             Row(

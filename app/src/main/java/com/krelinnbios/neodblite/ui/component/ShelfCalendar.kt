@@ -5,13 +5,16 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -32,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.krelinnbios.neodblite.data.model.MarkSchema
 import java.util.Calendar
@@ -52,6 +56,10 @@ fun ShelfCalendar(
         marks.mapNotNull { it.createdTime?.takeIf { t -> t.length >= 10 }?.substring(0, 10) }
             .groupingBy { it }
             .eachCount()
+    }
+    // 有已加载标记的月份集合（yyyy-MM），用于月份选择器里的小圆点提示。
+    val monthsWithData = remember(counts) {
+        counts.keys.mapTo(mutableSetOf()) { it.substring(0, 7) }
     }
     val initialYm = remember(marks) {
         marks.mapNotNull { it.createdTime?.takeIf { t -> t.length >= 7 }?.substring(0, 7) }
@@ -85,7 +93,7 @@ fun ShelfCalendar(
             IconButton(onClick = { ymOverride = shiftMonth(ym, -1) }) {
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null)
             }
-            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            BoxWithConstraints(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 Text(
                     text = ym,
                     style = MaterialTheme.typography.titleSmall,
@@ -93,7 +101,13 @@ fun ShelfCalendar(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.clickable { showPicker = true }
                 )
-                DropdownMenu(expanded = showPicker, onDismissRequest = { showPicker = false }) {
+                // 弹窗内容宽 220dp + 左右 8dp 内边距；默认贴锚点左缘，加偏移让它在标题区水平居中。
+                val menuWidth = 236.dp
+                DropdownMenu(
+                    expanded = showPicker,
+                    onDismissRequest = { showPicker = false },
+                    offset = DpOffset(x = (maxWidth - menuWidth) / 2, y = 0.dp)
+                ) {
                     var pickYear by remember { mutableStateOf(year) }
                     Column(modifier = Modifier.padding(8.dp).width(220.dp)) {
                         Row(
@@ -123,25 +137,44 @@ fun ShelfCalendar(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 rowMonths.forEach { m ->
-                                    val monthStr = "%02d".format(m)
-                                    val selected = ym == "%04d-%02d".format(pickYear, m)
+                                    val ymStr = "%04d-%02d".format(pickYear, m)
+                                    val selected = ym == ymStr
+                                    val hasData = ymStr in monthsWithData
                                     Surface(
                                         modifier = Modifier.weight(1f).clickable {
-                                            ymOverride = "%04d-%02d".format(pickYear, m)
+                                            ymOverride = ymStr
                                             showPicker = false
                                         },
                                         shape = RoundedCornerShape(8.dp),
                                         color = if (selected) MaterialTheme.colorScheme.primary
                                         else MaterialTheme.colorScheme.surfaceVariant
                                     ) {
-                                        Text(
-                                            text = monthStr,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            textAlign = TextAlign.Center,
-                                            color = if (selected) MaterialTheme.colorScheme.onPrimary
-                                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
-                                        )
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
+                                        ) {
+                                            Text(
+                                                text = "%02d".format(m),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                textAlign = TextAlign.Center,
+                                                color = if (selected) MaterialTheme.colorScheme.onPrimary
+                                                else MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Spacer(Modifier.height(2.dp))
+                                            // 有已加载标记的月份显示小圆点，选中态用反色。
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(4.dp)
+                                                    .clip(CircleShape)
+                                                    .background(
+                                                        when {
+                                                            !hasData -> Color.Transparent
+                                                            selected -> MaterialTheme.colorScheme.onPrimary
+                                                            else -> MaterialTheme.colorScheme.primary
+                                                        }
+                                                    )
+                                            )
+                                        }
                                     }
                                 }
                             }

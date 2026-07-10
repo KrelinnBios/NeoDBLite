@@ -38,12 +38,18 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
+        with:
+          # 有了密钥才能把 Gradle 配置缓存跨 run 持久化（缓存里含敏感信息，必须加密存储）。
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
       - name: Install Android SDK 34
         run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Grant Gradle wrapper permission
+        run: chmod +x ./gradlew
 
       # Release 触发时版本号必须从 tag 推导，否则 APK 永远是 build.gradle.kts 里的
       # 默认版本（1.0.0/1），应用内更新会把新版误判为已安装版本，提示死循环。
@@ -90,8 +96,10 @@ jobs:
 
       # 发版前先跑单元测试，核心模块（更新解析、host 归一化等）出回归直接卡住，
       # 避免坏版本打包发布后被应用内更新推送给用户。
+      # 不加 --no-daemon：让下一步 assembleRelease 复用同一个已热身的守护进程，
+      # 省掉第二次 JVM 冷启动和项目配置；job 结束由 setup-gradle 负责清理。
       - name: Run unit tests
-        run: ./gradlew --no-daemon testReleaseUnitTest
+        run: ./gradlew testReleaseUnitTest
 
       - name: Build release APK
         env:
@@ -99,7 +107,7 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
-        run: ./gradlew --no-daemon assembleRelease
+        run: ./gradlew assembleRelease
 
       # 校验产物确实被正确签名，避免「Gradle 没报错但实际未签名/签错」流出。
       - name: Verify APK signature

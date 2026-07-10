@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+# 与 build-apk.yml 保持一致：所有 JavaScript actions 固定跑在 Node 24 上。
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Compile and unit test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          # 有了密钥才能把 Gradle 配置缓存跨 run 持久化（缓存里含敏感信息，必须加密存储）。
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android SDK 34
+        run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Grant Gradle wrapper permission
+        run: chmod +x ./gradlew
+
+      # 日常提交的编译门禁：不打包、不签名，只保证代码能编译、单测全绿。
+      # 附带作用：把 Gradle 依赖缓存写到默认分支，发版（tag）构建只能读缓存，
+      # 全靠这里保温，否则每次发版都从零下载依赖。
+      - name: Compile debug Kotlin
+        run: ./gradlew compileDebugKotlin --stacktrace
+
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest --stacktrace

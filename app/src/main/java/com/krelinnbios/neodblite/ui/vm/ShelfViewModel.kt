@@ -52,6 +52,10 @@ class ShelfViewModel : ViewModel() {
     private val _categoryCounts = MutableStateFlow<Map<Category, Int>>(emptyMap())
     val categoryCounts: StateFlow<Map<Category, Int>> = _categoryCounts.asStateFlow()
 
+    /** 各标签下的条目总数（key 为标签 uuid）。标签列表接口不含数量，需逐个取条目接口第一页的 count。 */
+    private val _tagCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val tagCounts: StateFlow<Map<String, Int>> = _tagCounts.asStateFlow()
+
     private var loadingTags = false
 
     init {
@@ -79,11 +83,27 @@ class ShelfViewModel : ViewModel() {
                 p++
             }
             if (!failed) {
-                _userTags.value = all.filter { !it.uuid.isNullOrBlank() && it.bestTitle.isNotBlank() }
+                val tags = all.filter { !it.uuid.isNullOrBlank() && it.bestTitle.isNotBlank() }
                     .sortedBy { it.bestTitle }
+                _userTags.value = tags
+                loadTagCounts(tags)
             }
             _tagsLoadFailed.value = failed
             loadingTags = false
+        }
+    }
+
+    /** 并发拉取各标签的条目总数（每个标签取条目接口第一页的 count），与类目数量同一套展示口径。 */
+    private fun loadTagCounts(tags: List<Tag>) {
+        viewModelScope.launch {
+            val counts = tags.mapNotNull { it.uuid }
+                .map { uuid ->
+                    async { uuid to repo.tagItems(uuid, 1).getOrNull()?.count }
+                }
+                .awaitAll()
+                .mapNotNull { (uuid, count) -> count?.let { uuid to it } }
+                .toMap()
+            _tagCounts.value = counts
         }
     }
 

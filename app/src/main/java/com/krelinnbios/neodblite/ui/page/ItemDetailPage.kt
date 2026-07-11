@@ -287,10 +287,16 @@ private fun DetailContent(
         item.brief?.takeIf { it.isNotBlank() }?.let { brief ->
             Spacer(Modifier.height(20.dp))
             var briefExpanded by remember(item.uuid) { mutableStateOf(false) }
+            // 简介是否真的超过折叠行数：只有溢出（或已展开）才显示展开箭头与点击行为。
+            var briefOverflowing by remember(item.uuid) { mutableStateOf(false) }
+            val briefCollapsible = briefOverflowing || briefExpanded
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { briefExpanded = !briefExpanded },
+                    .then(
+                        if (briefCollapsible) Modifier.clickable { briefExpanded = !briefExpanded }
+                        else Modifier
+                    ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -299,16 +305,18 @@ private fun DetailContent(
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f)
                 )
-                val briefArrowRotation by animateFloatAsState(
-                    targetValue = if (briefExpanded) 180f else 0f,
-                    label = "briefArrowRotation"
-                )
-                Icon(
-                    imageVector = Icons.Filled.ArrowDropDown,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.rotate(briefArrowRotation)
-                )
+                if (briefCollapsible) {
+                    val briefArrowRotation by animateFloatAsState(
+                        targetValue = if (briefExpanded) 180f else 0f,
+                        label = "briefArrowRotation"
+                    )
+                    Icon(
+                        imageVector = Icons.Filled.ArrowDropDown,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.rotate(briefArrowRotation)
+                    )
+                }
             }
             Spacer(Modifier.height(6.dp))
             Text(
@@ -316,7 +324,11 @@ private fun DetailContent(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = if (briefExpanded) Int.MAX_VALUE else 4,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                onTextLayout = { layout ->
+                    // 展开状态不会溢出，此时保持标记不变，避免箭头消失导致无法收起。
+                    if (!briefExpanded) briefOverflowing = layout.hasVisualOverflow
+                }
             )
         }
 

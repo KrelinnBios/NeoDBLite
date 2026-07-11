@@ -323,7 +323,7 @@ private fun DetailContent(
                 text = brief,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = if (briefExpanded) Int.MAX_VALUE else 4,
+                maxLines = if (briefExpanded) Int.MAX_VALUE else 5,
                 overflow = TextOverflow.Ellipsis,
                 onTextLayout = { layout ->
                     // 展开状态不会溢出，此时保持标记不变，避免箭头消失导致无法收起。

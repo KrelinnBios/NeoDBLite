@@ -85,6 +85,7 @@ fun ShelfPage(
     val toast by shelfVM.toast.collectAsState()
     val userTags by shelfVM.userTags.collectAsState()
     val tagsLoadFailed by shelfVM.tagsLoadFailed.collectAsState()
+    val tagCounts by shelfVM.tagCounts.collectAsState()
     val categoryCounts by shelfVM.categoryCounts.collectAsState()
     val allCategoryCount = categoryCounts.takeIf { it.size == Category.entries.size }?.values?.sum()
 
@@ -214,7 +215,8 @@ fun ShelfPage(
                     }
                     userTags.forEach { tag ->
                         CompactMenuItem(
-                            label = menuLabel(tag.bestTitle, tag.itemCount),
+                            // API 标签列表不返回 item_count，数量来自 tagCounts（逐标签查询）；itemCount 仅作兜底。
+                            label = menuLabel(tag.bestTitle, tagCounts[tag.uuid] ?: tag.itemCount),
                             color = if (tag.uuid == selectedTag?.uuid) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.onSurface,
                             onClick = { selectedTag = tag; tagsExpanded = false }

@@ -77,9 +77,9 @@ Android 7.0（API 24）及以上。
 
 ## 许可协议
 
-本项目依据 [MIT License](./LICENSE) 发布。
+本项目依据 [MIT License](./LICENSE) 发布，允许使用、修改、分发和商业使用，但须保留许可证与版权声明。
 
-第三方资源以其原作者或原项目的许可证声明为准。
+第三方库、平台内容和外部服务不纳入本项目的 MIT 许可，分别适用其上游许可证、权利声明和服务条款，详见 [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md)。
 
 ## 反馈与贡献
 

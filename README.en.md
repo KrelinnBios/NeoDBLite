@@ -79,7 +79,7 @@ If Android refuses to install over the current build, uninstall the old version 
 
 This project is released under the [MIT License](./LICENSE), which permits use, modification, distribution, and commercial use provided that the license and copyright notice are retained.
 
-Third-party libraries, platform content, and external services are not covered by this project's MIT License. Their respective upstream licenses, rights notices, and service terms apply; see [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md).
+Third-party software, content, and external services are not automatically covered by the MIT License merely because this project references, accesses, compiles, or displays them; see [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md).
 
 ## Feedback & Contributions
 

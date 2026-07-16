@@ -79,7 +79,7 @@ Android 7.0（API 24）及以上。
 
 本專案依據 [MIT License](./LICENSE) 發布，允許使用、修改、散布及商業使用，但須保留授權條款與著作權聲明。
 
-第三方函式庫、平台內容與外部服務不納入本專案的 MIT 授權，分別適用其上游授權、權利聲明與服務條款，詳見 [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md)。
+第三方軟體、內容與外部服務不會僅因本專案引用、存取、編譯或展示而自動納入 MIT 授權，詳見 [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md)。
 
 ## 反饋與貢獻
 

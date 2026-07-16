@@ -33,7 +33,7 @@ NeoDB Lite is an unofficial Android client for [NeoDB](https://neodb.social) and
 - Item details: view cover, title, description, tags, external links, community rating and reviews, and set shelf status, rating, short comment, tags, and visibility to bookmark the item.
 - My shelf: browse your marks by status, category, tag, or title keyword, edit or delete them, with a calendar view.
 - Profile: view avatar, bio, shelf statistics, recently completed items, and collection entry points.
-- Preferences: switch themes and interface languages, check for updates, send feedback, or log out.
+- Preferences: switch among multiple themes and three interface languages, check for updates, send feedback, or log out.
 
 ## Screenshots
 
@@ -73,7 +73,7 @@ If Android refuses to install over the current build, uninstall the old version 
 
 - This is an unofficial client and is not affiliated with the NeoDB project or any instance operators.
 - Please follow the rules, content policies, and applicable laws of the instance you use.
-- Platform content remains the responsibility of its original sources.
+- Platform content remains subject to the terms, privacy policies, and rights notices of the relevant instance, content provider, and rights holder.
 
 ## License
 

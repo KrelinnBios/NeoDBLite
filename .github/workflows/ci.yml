@@ -41,9 +41,9 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
-
-      - name: Install Android SDK 34
-        run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
+        with:
+          packages: "platforms;android-34 build-tools;34.0.0"
+          cache: false
 
       - name: Grant Gradle wrapper permission
         run: chmod +x ./gradlew

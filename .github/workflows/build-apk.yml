@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -37,7 +37,7 @@ jobs:
           java-version: "17"
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v6
         with:
           # 有了密钥才能把 Gradle 配置缓存跨 run 持久化（缓存里含敏感信息，必须加密存储）。
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
@@ -129,7 +129,7 @@ jobs:
             "release/NeoDB Lite.apk"
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: NeoDB Lite-${{ github.run_number }}
           path: release/NeoDB Lite.apk
@@ -138,7 +138,7 @@ jobs:
 
       - name: Attach APK to release
         if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.release.tag_name }}
           files: release/NeoDB Lite.apk

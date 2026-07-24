@@ -1,5 +1,12 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
+    configurations.classpath {
+        resolutionStrategy.eachDependency {
+            if (requested.group == "io.netty") {
+                useVersion("4.1.136.Final")
+            }
+        }
+    }
     dependencies {
         // AGP 8.13.2 传递引入 bcprov-jdk18on 1.79(CVE-2025-14813,GOST CTR 密钥流重用),
         // 强制提升到修复版本;升级 AGP 后若其自带版本 >= 1.80.2 可移除此覆盖

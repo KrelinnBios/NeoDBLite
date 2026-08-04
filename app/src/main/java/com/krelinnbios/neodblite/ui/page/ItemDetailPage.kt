@@ -1,6 +1,5 @@
 package com.krelinnbios.neodblite.ui.page
 
-import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -64,6 +63,7 @@ import com.krelinnbios.neodblite.data.model.Visibility
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.ui.component.CoverImage
+import com.krelinnbios.neodblite.ui.component.AppToast
 import com.krelinnbios.neodblite.ui.component.ErrorBox
 import com.krelinnbios.neodblite.ui.component.LoadingBox
 import com.krelinnbios.neodblite.ui.component.MarkDraft
@@ -110,7 +110,6 @@ fun ItemDetailPage(
     onSearchTag: (String) -> Unit
 ) {
     val strings = LocalAppStrings.current
-    val context = LocalContext.current
     val itemState by detailVM.item.collectAsState()
     val mark by detailVM.mark.collectAsState()
     val community by detailVM.community.collectAsState()
@@ -121,7 +120,7 @@ fun ItemDetailPage(
     LaunchedEffect(path) { detailVM.loadOnce(path) }
     LaunchedEffect(toast) {
         toast?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            AppToast.show(it)
             detailVM.consumeToast()
         }
     }

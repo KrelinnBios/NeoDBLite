@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -43,6 +44,7 @@ import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.global.OAuthBus
 import com.krelinnbios.neodblite.ui.component.AppUpdateDialog
+import com.krelinnbios.neodblite.ui.component.AppToastHost
 import com.krelinnbios.neodblite.ui.component.LoadingBox
 import com.krelinnbios.neodblite.ui.i18n.AppLanguage
 import com.krelinnbios.neodblite.ui.i18n.AppLanguagePreference
@@ -94,18 +96,21 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background
                     ) {
-                        NeoDBLiteApp(
-                            currentTheme = appTheme,
-                            onThemeChange = { theme ->
-                                appTheme = theme
-                                AppThemePreference.save(context, theme)
-                            },
-                            currentLanguage = appLanguage,
-                            onLanguageChange = { language ->
-                                appLanguage = language
-                                AppLanguagePreference.save(context, language)
-                            }
-                        )
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            NeoDBLiteApp(
+                                currentTheme = appTheme,
+                                onThemeChange = { theme ->
+                                    appTheme = theme
+                                    AppThemePreference.save(context, theme)
+                                },
+                                currentLanguage = appLanguage,
+                                onLanguageChange = { language ->
+                                    appLanguage = language
+                                    AppLanguagePreference.save(context, language)
+                                }
+                            )
+                            AppToastHost(modifier = Modifier.padding(bottom = 50.dp))
+                        }
                     }
                 }
             }

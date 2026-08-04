@@ -1,6 +1,5 @@
 package com.krelinnbios.neodblite.ui.page
 
-import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -67,6 +66,7 @@ import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.component.AppUpdateDialog
 import com.krelinnbios.neodblite.ui.component.AppUpdateFailureDialog
+import com.krelinnbios.neodblite.ui.component.AppToast
 import com.krelinnbios.neodblite.ui.component.CoverImage
 import com.krelinnbios.neodblite.ui.component.EmptyBox
 import com.krelinnbios.neodblite.ui.component.ErrorBox
@@ -353,7 +353,7 @@ private fun ProfileSettingsDialog(
                     scope.launch {
                         when (val result = AppUpdateManager.checkForUpdate()) {
                             AppUpdateCheckResult.NoUpdate ->
-                                Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
+                                AppToast.show(strings.alreadyLatest)
                             is AppUpdateCheckResult.UpdateAvailable -> updateInfo = result.info
                             is AppUpdateCheckResult.Failed ->
                                 manualUpdateFailure = result.reason

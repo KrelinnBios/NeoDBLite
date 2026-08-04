@@ -34,6 +34,7 @@ import com.krelinnbios.neodblite.data.model.Category
 import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.data.model.Visibility
 import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
+import kotlin.math.roundToInt
 
 data class MarkDraft(
     val shelf: ShelfType,
@@ -49,6 +50,9 @@ fun parseMarkTags(text: String): List<String> =
         .map { it.trim().removePrefix("#") }
         .filter { it.isNotBlank() }
         .distinct()
+
+internal fun sliderValueToGrade(value: Float): Int =
+    value.roundToInt().coerceIn(0, 10)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,9 +100,12 @@ fun MarkEditor(
         )
         Slider(
             value = grade.toFloat(),
-            onValueChange = { grade = it.toInt() },
+            onValueChange = { grade = sliderValueToGrade(it) },
             valueRange = 0f..10f,
-            steps = 9
+            steps = 9,
+            modifier = Modifier
+                .padding(horizontal = 8.dp)
+                .height(32.dp)
         )
 
         Spacer(Modifier.height(8.dp))

@@ -1,6 +1,5 @@
 package com.krelinnbios.neodblite.ui.page
 
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Box
@@ -41,7 +40,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -55,6 +53,7 @@ import com.krelinnbios.neodblite.data.model.Tag
 import com.krelinnbios.neodblite.data.model.Visibility
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.component.AdaptiveTabRow
+import com.krelinnbios.neodblite.ui.component.AppToast
 import com.krelinnbios.neodblite.ui.component.EmptyBox
 import com.krelinnbios.neodblite.ui.component.ErrorBox
 import com.krelinnbios.neodblite.ui.component.ItemRow
@@ -74,7 +73,6 @@ fun ShelfPage(
     onOpenItem: (ItemBrief) -> Unit
 ) {
     val strings = LocalAppStrings.current
-    val context = LocalContext.current
     val tagItemsVM: TagItemsViewModel = viewModel()
 
     val shelfType by shelfVM.shelfType.collectAsState()
@@ -99,7 +97,7 @@ fun ShelfPage(
 
     LaunchedEffect(toast) {
         toast?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            AppToast.show(it)
             shelfVM.consumeToast()
         }
     }

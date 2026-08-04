@@ -1,6 +1,5 @@
 package com.krelinnbios.neodblite.ui.component
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,7 +18,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.krelinnbios.neodblite.data.model.Category
@@ -48,7 +46,6 @@ fun QuickMarkSheet(item: ItemBrief, onDismiss: () -> Unit) {
     }
     val repo = App.container.repository
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     val strings = LocalAppStrings.current
     val category = Category.fromApi(item.category ?: item.type)
 
@@ -99,10 +96,10 @@ fun QuickMarkSheet(item: ItemBrief, onDismiss: () -> Unit) {
                             )
                         )
                             .onSuccess {
-                                Toast.makeText(context, strings.saved, Toast.LENGTH_SHORT).show()
+                                AppToast.show(strings.saved)
                                 MarkEventBus.markDirty()
                             }
-                            .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
+                            .onFailure { AppToast.show(it.friendlyMessage()) }
                     }
                     onDismiss()
                 },
@@ -110,10 +107,10 @@ fun QuickMarkSheet(item: ItemBrief, onDismiss: () -> Unit) {
                     scope.launch {
                         repo.deleteMark(uuid)
                             .onSuccess {
-                                Toast.makeText(context, strings.markDeleted, Toast.LENGTH_SHORT).show()
+                                AppToast.show(strings.markDeleted)
                                 MarkEventBus.markDirty()
                             }
-                            .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
+                            .onFailure { AppToast.show(it.friendlyMessage()) }
                     }
                     onDismiss()
                 }

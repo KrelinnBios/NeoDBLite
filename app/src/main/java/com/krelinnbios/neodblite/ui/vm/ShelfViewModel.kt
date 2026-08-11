@@ -3,7 +3,6 @@ package com.krelinnbios.neodblite.ui.vm
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.krelinnbios.neodblite.data.model.Category
-import com.krelinnbios.neodblite.data.model.ItemBrief
 import com.krelinnbios.neodblite.data.model.MarkInRequest
 import com.krelinnbios.neodblite.data.model.MarkSchema
 import com.krelinnbios.neodblite.data.model.ShelfType
@@ -211,19 +210,6 @@ class ShelfViewModel : ViewModel() {
                     loadCategoryCounts()
                     MarkEventBus.markDirty()
                     onSuccess?.invoke()
-                }
-                .onFailure { _toast.value = it.friendlyMessage() }
-        }
-    }
-
-    /** 标签接口只返回条目，编辑前按条目 uuid 补取完整标记。 */
-    fun loadMarkForEditing(item: ItemBrief, onSuccess: (MarkSchema) -> Unit) {
-        val uuid = item.uuid?.takeIf { it.isNotBlank() } ?: return
-        viewModelScope.launch {
-            repo.mark(uuid)
-                .onSuccess { mark ->
-                    if (mark != null) onSuccess(mark.copy(item = mark.item ?: item))
-                    else _toast.value = "未找到标记"
                 }
                 .onFailure { _toast.value = it.friendlyMessage() }
         }

@@ -2,10 +2,14 @@ package com.krelinnbios.neodblite.ui.vm
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.krelinnbios.neodblite.data.model.ItemBrief
+import com.krelinnbios.neodblite.data.model.MarkSchema
+import com.krelinnbios.neodblite.data.model.TagItem
 import com.krelinnbios.neodblite.global.App
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.friendlyMessage
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,8 +19,8 @@ import kotlinx.coroutines.launch
 class TagItemsViewModel : ViewModel() {
     private val repo = App.container.repository
 
-    private val _state = MutableStateFlow<UiState<List<ItemBrief>>>(UiState.Loading)
-    val state: StateFlow<UiState<List<ItemBrief>>> = _state.asStateFlow()
+    private val _state = MutableStateFlow<UiState<List<MarkSchema>>>(UiState.Loading)
+    val state: StateFlow<UiState<List<MarkSchema>>> = _state.asStateFlow()
 
     private val _loadingMore = MutableStateFlow(false)
     val loadingMore: StateFlow<Boolean> = _loadingMore.asStateFlow()
@@ -24,7 +28,7 @@ class TagItemsViewModel : ViewModel() {
     private var loadedUuid: String? = null
     private var page = 1
     private var pages = 1
-    private val accumulated = mutableListOf<ItemBrief>()
+    private val accumulated = mutableListOf<MarkSchema>()
 
     fun loadOnce(uuid: String) {
         if (loadedUuid == uuid && _state.value is UiState.Success) return
@@ -33,6 +37,7 @@ class TagItemsViewModel : ViewModel() {
     }
 
     fun load(uuid: String) {
+        loadedUuid = uuid
         page = 1
         accumulated.clear()
         _state.value = UiState.Loading
@@ -40,7 +45,7 @@ class TagItemsViewModel : ViewModel() {
             repo.tagItems(uuid, page)
                 .onSuccess {
                     pages = it.pages
-                    accumulated.addAll(it.data.mapNotNull { member -> member.item })
+                    accumulated.addAll(loadMarks(it.data))
                     _state.value = UiState.Success(accumulated.toList())
                 }
                 .onFailure { _state.value = UiState.Error(it.friendlyMessage()) }
@@ -56,10 +61,21 @@ class TagItemsViewModel : ViewModel() {
                 .onSuccess {
                     page += 1
                     pages = it.pages
-                    accumulated.addAll(it.data.mapNotNull { member -> member.item })
+                    accumulated.addAll(loadMarks(it.data))
                     _state.value = UiState.Success(accumulated.toList())
                 }
             _loadingMore.value = false
         }
+    }
+
+    /** 标签接口只返回条目；补取个人标记后与普通书架共用完整行样式。 */
+    private suspend fun loadMarks(members: List<TagItem>): List<MarkSchema> = coroutineScope {
+        members.mapNotNull { it.item }.map { item ->
+            async {
+                val uuid = item.uuid?.takeIf { it.isNotBlank() }
+                val mark = uuid?.let { repo.mark(it).getOrNull() }
+                mark?.copy(item = mark.item ?: item) ?: MarkSchema(item = item)
+            }
+        }.awaitAll()
     }
 }

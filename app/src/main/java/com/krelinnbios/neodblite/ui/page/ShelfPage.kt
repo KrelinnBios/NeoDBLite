@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenu
@@ -262,6 +263,7 @@ fun ShelfPage(
                     tagItemsVM = tagItemsVM,
                     query = query,
                     onOpenItem = onOpenItem,
+                    onEdit = { item -> shelfVM.loadMarkForEditing(item) { editingMark = it } },
                     strings = strings
                 )
             } else {
@@ -372,6 +374,7 @@ fun ShelfPage(
                     ),
                     hasExisting = true,
                     onSave = { draft ->
+                        val selectedTagUuid = selectedTag?.uuid
                         shelfVM.saveMark(
                             uuid,
                             MarkInRequest(
@@ -381,12 +384,17 @@ fun ShelfPage(
                                 ratingGrade = draft.grade.takeIf { it > 0 },
                                 tags = draft.tags,
                                 postToFediverse = draft.shareToFediverse
-                            )
+                            ),
+                            onSuccess = { selectedTagUuid?.let(tagItemsVM::load) }
                         )
                         editingMark = null
                     },
                     onDelete = {
-                        shelfVM.deleteMark(uuid)
+                        val selectedTagUuid = selectedTag?.uuid
+                        shelfVM.deleteMark(
+                            uuid,
+                            onSuccess = { selectedTagUuid?.let(tagItemsVM::load) }
+                        )
                         editingMark = null
                     }
                 )
@@ -400,6 +408,7 @@ private fun TagItemsContent(
     tagItemsVM: TagItemsViewModel,
     query: String,
     onOpenItem: (ItemBrief) -> Unit,
+    onEdit: (ItemBrief) -> Unit,
     strings: com.krelinnbios.neodblite.ui.i18n.AppStrings
 ) {
     val state by tagItemsVM.state.collectAsState()
@@ -429,7 +438,21 @@ private fun TagItemsContent(
                 }
                 LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                     items(displayed) { item ->
-                        ItemRow(item = item, onClick = { onOpenItem(item) })
+                        ItemRow(
+                            item = item,
+                            onClick = { onOpenItem(item) },
+                            trailing = item.uuid?.takeIf { it.isNotBlank() }?.let {
+                                {
+                                    IconButton(onClick = { onEdit(item) }) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Edit,
+                                            contentDescription = strings.editMark,
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+                        )
                     }
                     if (loadingMore) {
                         item {

@@ -79,6 +79,7 @@ import com.krelinnbios.neodblite.util.AppUpdateCheckResult
 import com.krelinnbios.neodblite.util.AppUpdateInfo
 import com.krelinnbios.neodblite.util.AppUpdateManager
 import com.krelinnbios.neodblite.util.Browser
+import com.krelinnbios.neodblite.util.profileWebUrl
 import kotlinx.coroutines.launch
 
 private const val FEEDBACK_URL = "https://github.com/KrelinnBios/NeoDBLite/issues/new"
@@ -169,7 +170,9 @@ private fun ProfileHeader(
 ) {
     val strings = LocalAppStrings.current
     val context = LocalContext.current
-    val url = user.url
+    val url = remember(user.url, user.username, user.externalAcct, host) {
+        profileWebUrl(user, host)
+    }
     var bioExpanded by remember(user.url, user.username, user.externalAcct) { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {

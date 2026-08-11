@@ -11,9 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -55,16 +53,19 @@ fun ShelfCalendar(
             .groupingBy { it }
             .eachCount()
     }
-    // 有已加载标记的月份集合（yyyy-MM），用于月份选择器里的小圆点提示。
+    // 仅保留有已加载标记的月份，月份导航和选择器都只在这些月份间移动。
     val monthsWithData = remember(counts) {
-        counts.keys.mapTo(mutableSetOf()) { it.substring(0, 7) }
+        counts.keys.map { it.substring(0, 7) }.distinct().sorted()
     }
-    val initialYm = remember(marks) {
-        marks.mapNotNull { it.createdTime?.takeIf { t -> t.length >= 7 }?.substring(0, 7) }
-            .maxOrNull() ?: currentYm()
+    val initialYm = remember(monthsWithData) {
+        monthsWithData.lastOrNull() ?: currentYm()
     }
     var ymOverride by remember { mutableStateOf<String?>(null) }
-    val ym = ymOverride ?: initialYm
+    // 切换书架/类目后，旧月份可能不再有数据，此时自动回到当前数据的最新月份。
+    val ym = ymOverride?.takeIf { it in monthsWithData } ?: initialYm
+    val monthIndex = monthsWithData.indexOf(ym)
+    val previousYm = monthsWithData.getOrNull(monthIndex - 1)
+    val nextYm = monthsWithData.getOrNull(monthIndex + 1)
 
     val year = ym.substring(0, 4).toIntOrNull() ?: 2026
     val month0 = (ym.substring(5, 7).toIntOrNull() ?: 1) - 1
@@ -88,7 +89,13 @@ fun ShelfCalendar(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { ymOverride = shiftMonth(ym, -1) }) {
+            IconButton(
+                enabled = previousYm != null,
+                onClick = {
+                    ymOverride = previousYm
+                    if (selectedDay != null) onSelectDay(null)
+                }
+            ) {
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null)
             }
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
@@ -97,9 +104,12 @@ fun ShelfCalendar(
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.clickable { showPicker = true }
+                    modifier = Modifier.clickable(enabled = monthsWithData.isNotEmpty()) { showPicker = true }
                 )
-                // 选择器浏览的年份。放在弹窗外层（普通组合）持有，打开弹窗时重置为当前浏览年份。
+                val yearsWithData = remember(monthsWithData) {
+                    monthsWithData.map { it.substring(0, 4).toInt() }.distinct()
+                }
+                // 选择器只浏览有标记的年份。打开弹窗时重置为当前月份所在年份。
                 var pickYear by remember(showPicker) { mutableStateOf(year) }
                 // 锚点盒子与弹窗内容同宽（220dp + 左右 8dp 内边距）并在标题区居中，
                 // 弹窗贴锚点左缘展开即水平居中；盒子无点击处理，不影响标题的点按。
@@ -113,7 +123,13 @@ fun ShelfCalendar(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                IconButton(onClick = { pickYear-- }) {
+                                val pickYearIndex = yearsWithData.indexOf(pickYear)
+                                val previousYear = yearsWithData.getOrNull(pickYearIndex - 1)
+                                val nextYear = yearsWithData.getOrNull(pickYearIndex + 1)
+                                IconButton(
+                                    enabled = previousYear != null,
+                                    onClick = { previousYear?.let { pickYear = it } }
+                                ) {
                                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null)
                                 }
                                 Text(
@@ -121,14 +137,18 @@ fun ShelfCalendar(
                                     style = MaterialTheme.typography.titleSmall,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
-                                IconButton(onClick = { pickYear++ }) {
+                                IconButton(
+                                    enabled = nextYear != null,
+                                    onClick = { nextYear?.let { pickYear = it } }
+                                ) {
                                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
                                 }
                             }
                             Spacer(Modifier.height(4.dp))
-                            // 固定 3×4 网格。此前用 LazyVerticalGrid 时，Popup 内的条目复用会让
-                            // 切换年份后残留旧的选中高亮；12 个月静态排布即可，无需懒加载。
-                            (1..12).chunked(4).forEachIndexed { rowIndex, rowMonths ->
+                            val markedMonths = monthsWithData
+                                .filter { it.startsWith("%04d-".format(pickYear)) }
+                                .map { it.substring(5, 7).toInt() }
+                            markedMonths.chunked(4).forEachIndexed { rowIndex, rowMonths ->
                                 androidx.compose.runtime.key(pickYear, rowIndex) {
                                 if (rowIndex > 0) Spacer(Modifier.height(4.dp))
                                 Row(
@@ -138,10 +158,10 @@ fun ShelfCalendar(
                                     rowMonths.forEach { m ->
                                         val ymStr = "%04d-%02d".format(pickYear, m)
                                         val selected = ym == ymStr
-                                        val hasData = ymStr in monthsWithData
                                         Surface(
                                             modifier = Modifier.weight(1f).clickable {
                                                 ymOverride = ymStr
+                                                if (selectedDay != null) onSelectDay(null)
                                                 showPicker = false
                                             },
                                             shape = RoundedCornerShape(8.dp),
@@ -159,22 +179,11 @@ fun ShelfCalendar(
                                                     color = if (selected) MaterialTheme.colorScheme.onPrimary
                                                     else MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
-                                                Spacer(Modifier.height(2.dp))
-                                                // 有已加载标记的月份显示小圆点，选中态用反色。
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(4.dp)
-                                                        .clip(CircleShape)
-                                                        .background(
-                                                            when {
-                                                                !hasData -> Color.Transparent
-                                                                selected -> MaterialTheme.colorScheme.onPrimary
-                                                                else -> MaterialTheme.colorScheme.primary
-                                                            }
-                                                        )
-                                                )
                                             }
                                         }
+                                    }
+                                    repeat(4 - rowMonths.size) {
+                                        Spacer(modifier = Modifier.weight(1f))
                                     }
                                 }
                                 }
@@ -183,7 +192,13 @@ fun ShelfCalendar(
                     }
                 }
             }
-            IconButton(onClick = { ymOverride = shiftMonth(ym, 1) }) {
+            IconButton(
+                enabled = nextYm != null,
+                onClick = {
+                    ymOverride = nextYm
+                    if (selectedDay != null) onSelectDay(null)
+                }
+            ) {
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
             }
         }
@@ -244,12 +259,5 @@ fun ShelfCalendar(
 
 private fun currentYm(): String {
     val c = Calendar.getInstance()
-    return "%04d-%02d".format(c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1)
-}
-
-private fun shiftMonth(ym: String, delta: Int): String {
-    val y = ym.substring(0, 4).toIntOrNull() ?: return ym
-    val m = (ym.substring(5, 7).toIntOrNull() ?: return ym) - 1
-    val c = Calendar.getInstance().apply { clear(); set(y, m, 1); add(Calendar.MONTH, delta) }
     return "%04d-%02d".format(c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1)
 }

@@ -17,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenu
@@ -57,7 +56,6 @@ import com.krelinnbios.neodblite.ui.component.AdaptiveTabRow
 import com.krelinnbios.neodblite.ui.component.AppToast
 import com.krelinnbios.neodblite.ui.component.EmptyBox
 import com.krelinnbios.neodblite.ui.component.ErrorBox
-import com.krelinnbios.neodblite.ui.component.ItemRow
 import com.krelinnbios.neodblite.ui.component.LoadingBox
 import com.krelinnbios.neodblite.ui.component.MarkDraft
 import com.krelinnbios.neodblite.ui.component.MarkEditor
@@ -263,7 +261,7 @@ fun ShelfPage(
                     tagItemsVM = tagItemsVM,
                     query = query,
                     onOpenItem = onOpenItem,
-                    onEdit = { item -> shelfVM.loadMarkForEditing(item) { editingMark = it } },
+                    onEdit = { editingMark = it },
                     strings = strings
                 )
             } else {
@@ -408,7 +406,7 @@ private fun TagItemsContent(
     tagItemsVM: TagItemsViewModel,
     query: String,
     onOpenItem: (ItemBrief) -> Unit,
-    onEdit: (ItemBrief) -> Unit,
+    onEdit: (MarkSchema) -> Unit,
     strings: com.krelinnbios.neodblite.ui.i18n.AppStrings
 ) {
     val state by tagItemsVM.state.collectAsState()
@@ -419,7 +417,7 @@ private fun TagItemsContent(
         is UiState.Error -> ErrorBox(s.message)
         is UiState.Success -> {
             val displayed = if (query.isNotBlank()) {
-                s.data.filter { it.bestTitle.contains(query, ignoreCase = true) }
+                s.data.filter { it.item?.bestTitle?.contains(query, ignoreCase = true) == true }
             } else s.data
 
             if (displayed.isEmpty()) {
@@ -437,22 +435,20 @@ private fun TagItemsContent(
                     if (shouldLoadMore) tagItemsVM.loadMore()
                 }
                 LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-                    items(displayed) { item ->
-                        ItemRow(
-                            item = item,
-                            onClick = { onOpenItem(item) },
-                            trailing = item.uuid?.takeIf { it.isNotBlank() }?.let {
-                                {
-                                    IconButton(onClick = { onEdit(item) }) {
-                                        Icon(
-                                            imageVector = Icons.Filled.Edit,
-                                            contentDescription = strings.editMark,
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                }
+                    items(displayed) { mark ->
+                        val item = mark.item
+                        if (item != null) {
+                            val editAction: (() -> Unit)? = if (item.uuid.isNullOrBlank()) {
+                                null
+                            } else {
+                                { onEdit(mark) }
                             }
-                        )
+                            MarkRow(
+                                mark = mark,
+                                onClick = { onOpenItem(item) },
+                                onEdit = editAction
+                            )
+                        }
                     }
                     if (loadingMore) {
                         item {

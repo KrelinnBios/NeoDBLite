@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -175,12 +176,13 @@ fun MarkRow(
     val myGrade = mark.ratingGrade?.takeIf { it > 0 }
     val myComment = mark.commentText?.takeIf { it.isNotBlank() }
 
-    Row(
-        modifier = modifier
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp)
-    ) {
+        ) {
         CoverImage(
             url = item.coverImageUrl,
             modifier = Modifier.width(60.dp).height(84.dp)
@@ -257,6 +259,11 @@ fun MarkRow(
                 }
             }
         }
+        }
+        HorizontalDivider(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+        )
     }
 }
 /** 列表/网格中通用的条目行：封面 + 标题 + 副标题 + 评分。 */
@@ -269,12 +276,13 @@ fun ItemRow(
     trailing: (@Composable () -> Unit)? = null,
     onLongClick: (() -> Unit)? = null
 ) {
-    Row(
-        modifier = modifier
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 10.dp)
-    ) {
+        ) {
         CoverImage(
             url = item.coverImageUrl,
             modifier = Modifier.width(60.dp).height(84.dp)
@@ -325,5 +333,10 @@ fun ItemRow(
                 trailing()
             }
         }
+        }
+        HorizontalDivider(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+        )
     }
 }

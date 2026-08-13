@@ -7,7 +7,7 @@
 - **NeoDB Lite**：面向 [NeoDB](https://neodb.social)（去中心化的书影音游标记平台）的非官方 Android 客户端，从零原生开发，定位为轻量「能用、好用」的标记工具，解决网页端在手机上体验不佳的问题。
 - Kotlin + Jetpack Compose + Material 3；minSdk 24 / targetSdk 34 / compileSdk 34 / JDK 17。
 - 包名与 applicationId 均为 `com.krelinnbios.neodblite`。
-- 仅构建 `arm64-v8a` 和 `armeabi-v7a`；APK 固定命名为 `NeoDB Lite.apk`。
+- 仅构建 `arm64-v8a` 和 `armeabi-v7a`；APK 固定命名为 `NeoDB-Lite.apk`。
 - 应用内更新绑定 GitHub Releases（KrelinnBios/NeoDBLite）。
 - 与 [YamiboReaderLite](../YamiboReaderLite) 同一作者，工程约定（签名、CI、固定 APK 名、应用内更新、文档风格）保持一致。
 
@@ -29,7 +29,7 @@
 ```powershell
 .\gradlew.bat compileDebugKotlin   # Kotlin 改动后的最低检查，必须执行
 .\gradlew.bat testDebugUnitTest    # 运行本地单元测试
-.\gradlew.bat assembleDebug        # 生成 app\build\outputs\apk\debug\NeoDB Lite.apk
+.\gradlew.bat assembleDebug        # 生成 app\build\outputs\apk\debug\NeoDB-Lite.apk
 .\gradlew.bat clean assembleDebug  # 增量构建损坏时使用
 ```
 
@@ -63,7 +63,7 @@
 
 - **应用内更新**：版本号在 CI 由 tag 推导（`APP_VERSION_NAME` 去 `v` 前缀、`APP_VERSION_CODE` 取 `run_number`），发布包不得回落到 `build.gradle.kts` 默认版本，否则更新循环。下载多源回退（GitHub 直链优先 + 镜像前缀），每个源都严格校验版本号/版本码/签名一致，杜绝「显示新版却装到旧版」。
 - **签名**：`build.gradle.kts` 从 env/gradle 属性读取签名材料；齐全则建 `stable` 签名配置，debug 缺失时回退 AGP debug 签名保证可安装，release 缺失时保持未签名。CI 用 base64 secret 还原 keystore，四个签名 secrets 缺一即失败。
-- **APK 固定名**：debug/release 与 CI 产物一律 `NeoDB Lite.apk`（AGP 8.13 需 cast `VariantOutputImpl` 设 `outputFileName`）。
+- **APK 固定名**：debug/release 与 CI 产物一律 `NeoDB-Lite.apk`（AGP 8.13 需 cast `VariantOutputImpl` 设 `outputFileName`）。
 - **CI 固定 Node 24 兼容动作版本**：checkout@v5、setup-java@v5、setup-gradle@v5、setup-android@v4、upload-artifact@v5，并设 `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`。不要降级。
 - **实例可配置**：默认 `neodb.social`，但 NeoDB 是联邦平台，登录页允许填其它兼容实例；host 归一化统一走 `AuthStore.normalizeHost`。
 - **评分口径**：NeoDB 评分为 0~10；展示用 5 星（半星粒度），标记输入 `rating_grade` 为整数 0~10，0 表示未评分（提交时省略该字段）。

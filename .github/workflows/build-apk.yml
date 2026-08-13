@@ -119,20 +119,20 @@ jobs:
             exit 1
           fi
           "$apksigner" verify --verbose --print-certs \
-            "app/build/outputs/apk/release/NeoDB Lite.apk"
+            "app/build/outputs/apk/release/NeoDB-Lite.apk"
 
       - name: Prepare APK
         shell: bash
         run: |
           mkdir -p release
-          cp "app/build/outputs/apk/release/NeoDB Lite.apk" \
-            "release/NeoDB Lite.apk"
+          cp "app/build/outputs/apk/release/NeoDB-Lite.apk" \
+            "release/NeoDB-Lite.apk"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v7
         with:
-          name: NeoDB Lite-${{ github.run_number }}
-          path: release/NeoDB Lite.apk
+          name: NeoDB-Lite-${{ github.run_number }}
+          path: release/NeoDB-Lite.apk
           if-no-files-found: error
           retention-days: 30
 
@@ -141,4 +141,4 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.release.tag_name }}
-          files: release/NeoDB Lite.apk
+          files: release/NeoDB-Lite.apk

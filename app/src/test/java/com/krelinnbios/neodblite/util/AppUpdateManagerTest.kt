@@ -23,7 +23,7 @@ class AppUpdateManagerTest {
                   "browser_download_url": "https://example.com/checksums.txt"
                 },
                 {
-                  "name": "NeoDB Lite.apk",
+                  "name": "NeoDB-Lite.apk",
                   "content_type": "application/vnd.android.package-archive",
                   "browser_download_url": "https://example.com/app.apk"
                 }

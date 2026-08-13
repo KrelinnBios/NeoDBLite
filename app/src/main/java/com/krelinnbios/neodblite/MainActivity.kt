@@ -244,11 +244,12 @@ private fun MainScaffold(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar(
                     modifier = Modifier.height(64.dp),
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
                 ) {
                     bottomDestinations.forEach { dest ->
                         NavigationBarItem(

@@ -68,7 +68,8 @@ object AppUpdateManager {
 
     private const val APK_MIME_TYPE = "application/vnd.android.package-archive"
     private const val MAX_APK_SIZE_BYTES = 512L * 1024L * 1024L
-    private const val APK_BASE_NAME = "NeoDB Lite"
+    private const val APK_BASE_NAME = "NeoDB-Lite"
+    private const val LEGACY_APK_BASE_NAME = "NeoDB Lite"
 
     // 自动检查的最小间隔：GitHub 未认证接口限流约每小时 60 次（按 IP 计），频繁启动会触发 403。
     private const val AUTO_CHECK_MIN_INTERVAL_MS = 6L * 60 * 60 * 1000
@@ -293,7 +294,12 @@ object AppUpdateManager {
         }
 
         updateDir.listFiles()
-            ?.filter { it.name.startsWith("$APK_BASE_NAME-") || it.name == "$APK_BASE_NAME.apk" }
+            ?.filter {
+                it.name.startsWith("$APK_BASE_NAME-") ||
+                    it.name == "$APK_BASE_NAME.apk" ||
+                    it.name.startsWith("$LEGACY_APK_BASE_NAME-") ||
+                    it.name == "$LEGACY_APK_BASE_NAME.apk"
+            }
             ?.forEach { it.delete() }
 
         val safeVersionName = info.versionName.replace(Regex("[^A-Za-z0-9._-]"), "_")

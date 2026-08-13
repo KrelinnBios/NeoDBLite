@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Color
 enum class AppTheme(val label: String, val isDark: Boolean, val scheme: ColorScheme) {
 
     BLUE_BLACK(
-        label = "蓝黑",
+        label = "蓝黑·深",
         isDark = true,
         scheme = darkColorScheme(
             primary = Color(0xFF4EA1FF),
@@ -113,8 +113,8 @@ enum class AppTheme(val label: String, val isDark: Boolean, val scheme: ColorSch
             onPrimaryContainer = Color(0xFF3E001D),
             secondary = Color(0xFF75565C),
             onSecondary = Color(0xFFFFFFFF),
-            secondaryContainer = Color(0xFFFFD9E1),
-            onSecondaryContainer = Color(0xFF2B151A),
+            secondaryContainer = Color(0xFFF2DDE1),
+            onSecondaryContainer = Color(0xFF514347),
             background = Color(0xFFFFF8F8),
             onBackground = Color(0xFF201A1B),
             surface = Color(0xFFFFF8F8),

@@ -50,7 +50,7 @@ NeoDB Lite 是面向 [NeoDB](https://neodb.social) 及相容實例的非官方 A
 
 ### 安裝使用
 
-從 [Releases](https://github.com/KrelinnBios/NeoDBLite/releases) 下載 `NeoDB Lite.apk` 後安裝。
+從 [Releases](https://github.com/KrelinnBios/NeoDBLite/releases) 下載 `NeoDB-Lite.apk` 後安裝。
 
 ### 系統需求
 

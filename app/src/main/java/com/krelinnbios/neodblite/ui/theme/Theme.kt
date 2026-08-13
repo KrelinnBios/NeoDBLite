@@ -18,8 +18,8 @@ fun NeoDBLiteTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.background.toArgb()
-            window.navigationBarColor = colorScheme.background.toArgb()
+            window.statusBarColor = colorScheme.surfaceContainer.toArgb()
+            window.navigationBarColor = colorScheme.surfaceContainer.toArgb()
             val controller = WindowCompat.getInsetsController(window, view)
             controller.isAppearanceLightStatusBars = !appTheme.isDark
             controller.isAppearanceLightNavigationBars = !appTheme.isDark

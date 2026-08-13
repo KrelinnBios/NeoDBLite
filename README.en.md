@@ -50,7 +50,7 @@ NeoDB Lite is an unofficial Android client for [NeoDB](https://neodb.social) and
 
 ### Installation
 
-Download `NeoDB Lite.apk` from [Releases](https://github.com/KrelinnBios/NeoDBLite/releases) and install it.
+Download `NeoDB-Lite.apk` from [Releases](https://github.com/KrelinnBios/NeoDBLite/releases) and install it.
 
 ### Requirements
 

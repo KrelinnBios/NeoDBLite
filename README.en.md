@@ -64,7 +64,7 @@ The app can check for new versions on startup or from settings. When an update i
 
 If Android refuses to install over the current build, uninstall the old version first and then install the APK from Releases again.
 
-## Data & Safety
+## Data & Privacy
 
 - Login authorization is used only to access the NeoDB or compatible instance you choose, and the sign-in state is stored locally on your device.
 - Item data, covers, ratings, and comments come from your instance and its related sources.
@@ -80,7 +80,7 @@ If Android refuses to install over the current build, uninstall the old version 
 
 This project is released under the [MIT License](./LICENSE), which permits use, modification, distribution, and commercial use provided that the license and copyright notice are retained.
 
-Third-party software, content, and external services are not automatically covered by the MIT License merely because this project references, accesses, compiles, or displays them; see [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md).
+Third-party software, content, and external services are not automatically covered by the MIT License merely because this project references, accesses, compiles, or displays them; instance data and account content are not part of this project's own code either. See [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md).
 
 ## Feedback & Contributions
 

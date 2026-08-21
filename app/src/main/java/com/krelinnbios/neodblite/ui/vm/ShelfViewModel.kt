@@ -37,6 +37,9 @@ class ShelfViewModel : ViewModel() {
     private val _loadingMore = MutableStateFlow(false)
     val loadingMore: StateFlow<Boolean> = _loadingMore.asStateFlow()
 
+    private val _loadingAll = MutableStateFlow(false)
+    val loadingAll: StateFlow<Boolean> = _loadingAll.asStateFlow()
+
     private val _refreshing = MutableStateFlow(false)
     val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
 
@@ -169,7 +172,7 @@ class ShelfViewModel : ViewModel() {
     }
 
     fun loadMore() {
-        if (_loadingMore.value || page >= pages) return
+        if (_loadingMore.value || _loadingAll.value || page >= pages) return
         _loadingMore.value = true
         viewModelScope.launch {
             repo.shelf(_shelfType.value, _category.value, page + 1)
@@ -180,6 +183,28 @@ class ShelfViewModel : ViewModel() {
                     _state.value = UiState.Success(accumulated.toList())
                 }
             _loadingMore.value = false
+        }
+    }
+
+    /** 搜索时需要覆盖尚未滚动到的分页，否则本地过滤会漏掉早期收藏。 */
+    fun loadAll() {
+        if (_loadingMore.value || _loadingAll.value || page >= pages) return
+        _loadingAll.value = true
+        viewModelScope.launch {
+            try {
+                while (page < pages) {
+                    val nextPage = page + 1
+                    val result = repo.shelf(_shelfType.value, _category.value, nextPage)
+                    if (result.isFailure) break
+                    val response = result.getOrThrow()
+                    page = nextPage
+                    pages = response.pages
+                    accumulated.addAll(response.data)
+                    _state.value = UiState.Success(accumulated.toList())
+                }
+            } finally {
+                _loadingAll.value = false
+            }
         }
     }
 

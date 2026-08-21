@@ -78,6 +78,7 @@ fun ShelfPage(
     val category by shelfVM.category.collectAsState()
     val state by shelfVM.state.collectAsState()
     val loadingMore by shelfVM.loadingMore.collectAsState()
+    val loadingAll by shelfVM.loadingAll.collectAsState()
     val refreshing by shelfVM.refreshing.collectAsState()
     val toast by shelfVM.toast.collectAsState()
     val userTags by shelfVM.userTags.collectAsState()
@@ -283,6 +284,11 @@ fun ShelfPage(
                                 } else list
                             }
 
+                        val dataLoaded = state is UiState.Success
+                        LaunchedEffect(query, dataLoaded) {
+                            if (query.isNotBlank()) shelfVM.loadAll()
+                        }
+
                         Column(modifier = Modifier.fillMaxSize()) {
                             if (showCalendar) {
                                 ShelfCalendar(
@@ -293,7 +299,8 @@ fun ShelfPage(
                             }
 
                             if (displayed.isEmpty()) {
-                                EmptyBox(strings.noContent)
+                                if (query.isNotBlank() && loadingAll) LoadingBox()
+                                else EmptyBox(strings.noContent)
                             } else {
                                 val listState = rememberLazyListState()
                                 val shouldLoadMore by remember {
@@ -304,7 +311,7 @@ fun ShelfPage(
                                     }
                                 }
                                 LaunchedEffect(shouldLoadMore) {
-                                    if (shouldLoadMore) shelfVM.loadMore()
+                                    if (shouldLoadMore && query.isBlank()) shelfVM.loadMore()
                                 }
 
                                 PullToRefreshBox(
@@ -411,6 +418,12 @@ private fun TagItemsContent(
 ) {
     val state by tagItemsVM.state.collectAsState()
     val loadingMore by tagItemsVM.loadingMore.collectAsState()
+    val loadingAll by tagItemsVM.loadingAll.collectAsState()
+
+    val dataLoaded = state is UiState.Success
+    LaunchedEffect(query, dataLoaded) {
+        if (query.isNotBlank()) tagItemsVM.loadAll()
+    }
 
     when (val s = state) {
         is UiState.Loading -> LoadingBox()
@@ -421,7 +434,8 @@ private fun TagItemsContent(
             } else s.data
 
             if (displayed.isEmpty()) {
-                EmptyBox(strings.noContent)
+                if (query.isNotBlank() && loadingAll) LoadingBox()
+                else EmptyBox(strings.noContent)
             } else {
                 val listState = rememberLazyListState()
                 val shouldLoadMore by remember {
@@ -432,7 +446,7 @@ private fun TagItemsContent(
                     }
                 }
                 LaunchedEffect(shouldLoadMore) {
-                    if (shouldLoadMore) tagItemsVM.loadMore()
+                    if (shouldLoadMore && query.isBlank()) tagItemsVM.loadMore()
                 }
                 LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                     items(displayed) { mark ->

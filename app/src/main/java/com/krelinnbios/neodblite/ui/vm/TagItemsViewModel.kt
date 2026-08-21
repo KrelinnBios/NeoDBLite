@@ -25,6 +25,9 @@ class TagItemsViewModel : ViewModel() {
     private val _loadingMore = MutableStateFlow(false)
     val loadingMore: StateFlow<Boolean> = _loadingMore.asStateFlow()
 
+    private val _loadingAll = MutableStateFlow(false)
+    val loadingAll: StateFlow<Boolean> = _loadingAll.asStateFlow()
+
     private var loadedUuid: String? = null
     private var page = 1
     private var pages = 1
@@ -54,7 +57,7 @@ class TagItemsViewModel : ViewModel() {
 
     fun loadMore() {
         val uuid = loadedUuid ?: return
-        if (_loadingMore.value || page >= pages) return
+        if (_loadingMore.value || _loadingAll.value || page >= pages) return
         _loadingMore.value = true
         viewModelScope.launch {
             repo.tagItems(uuid, page + 1)
@@ -65,6 +68,29 @@ class TagItemsViewModel : ViewModel() {
                     _state.value = UiState.Success(accumulated.toList())
                 }
             _loadingMore.value = false
+        }
+    }
+
+    /** 搜索时需要覆盖尚未滚动到的分页，否则本地过滤会漏掉标签下的条目。 */
+    fun loadAll() {
+        val uuid = loadedUuid ?: return
+        if (_loadingMore.value || _loadingAll.value || page >= pages) return
+        _loadingAll.value = true
+        viewModelScope.launch {
+            try {
+                while (page < pages) {
+                    val nextPage = page + 1
+                    val result = repo.tagItems(uuid, nextPage)
+                    if (result.isFailure) break
+                    val response = result.getOrThrow()
+                    page = nextPage
+                    pages = response.pages
+                    accumulated.addAll(loadMarks(response.data))
+                    _state.value = UiState.Success(accumulated.toList())
+                }
+            } finally {
+                _loadingAll.value = false
+            }
         }
     }
 

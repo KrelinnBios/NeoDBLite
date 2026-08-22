@@ -1,6 +1,7 @@
 package com.krelinnbios.neodblite.ui.page
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,10 +21,12 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -80,6 +84,8 @@ fun ShelfPage(
     val loadingMore by shelfVM.loadingMore.collectAsState()
     val loadingAll by shelfVM.loadingAll.collectAsState()
     val refreshing by shelfVM.refreshing.collectAsState()
+    val dataEpoch by shelfVM.dataEpoch.collectAsState()
+    val tagLoadingAll by tagItemsVM.loadingAll.collectAsState()
     val toast by shelfVM.toast.collectAsState()
     val userTags by shelfVM.userTags.collectAsState()
     val tagsLoadFailed by shelfVM.tagsLoadFailed.collectAsState()
@@ -253,6 +259,13 @@ fun ShelfPage(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
             )
+            val q = searchQuery.trim()
+            val isSearchLoading = q.isNotEmpty() && (loadingAll || tagLoadingAll)
+            if (isSearchLoading) {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                )
+            }
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
@@ -285,7 +298,8 @@ fun ShelfPage(
                             }
 
                         val dataLoaded = state is UiState.Success
-                        LaunchedEffect(query, dataLoaded) {
+                        // dataEpoch：下拉刷新会把数据重置回第一页，需要重新触发全量拉取。
+                        LaunchedEffect(query, dataLoaded, dataEpoch) {
                             if (query.isNotBlank()) shelfVM.loadAll()
                         }
 
@@ -299,8 +313,7 @@ fun ShelfPage(
                             }
 
                             if (displayed.isEmpty()) {
-                                if (query.isNotBlank() && loadingAll) LoadingBox()
-                                else EmptyBox(strings.noContent)
+                                EmptyBox(strings.noContent)
                             } else {
                                 val listState = rememberLazyListState()
                                 val shouldLoadMore by remember {
@@ -418,7 +431,6 @@ private fun TagItemsContent(
 ) {
     val state by tagItemsVM.state.collectAsState()
     val loadingMore by tagItemsVM.loadingMore.collectAsState()
-    val loadingAll by tagItemsVM.loadingAll.collectAsState()
 
     val dataLoaded = state is UiState.Success
     LaunchedEffect(query, dataLoaded) {
@@ -434,8 +446,7 @@ private fun TagItemsContent(
             } else s.data
 
             if (displayed.isEmpty()) {
-                if (query.isNotBlank() && loadingAll) LoadingBox()
-                else EmptyBox(strings.noContent)
+                EmptyBox(strings.noContent)
             } else {
                 val listState = rememberLazyListState()
                 val shouldLoadMore by remember {

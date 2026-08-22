@@ -11,6 +11,7 @@ import com.krelinnbios.neodblite.global.App
 import com.krelinnbios.neodblite.global.MarkEventBus
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.friendlyMessage
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +34,13 @@ class ShelfViewModel : ViewModel() {
     private var page = 1
     private var pages = 1
     private val accumulated = mutableListOf<MarkSchema>()
+
+    /** 滚动加载/全量加载共用一个任务句柄：搜索时需能取消在途的滚动加载并由全量拉取接管。 */
+    private var extendJob: Job? = null
+
+    /** 基础列表被整体替换（如下拉刷新）时自增，供页面在搜索态重新触发全量拉取。 */
+    private val _dataEpoch = MutableStateFlow(0)
+    val dataEpoch: StateFlow<Int> = _dataEpoch.asStateFlow()
 
     private val _loadingMore = MutableStateFlow(false)
     val loadingMore: StateFlow<Boolean> = _loadingMore.asStateFlow()
@@ -127,6 +135,9 @@ class ShelfViewModel : ViewModel() {
     fun refresh() {
         if (_refreshing.value) return
         _refreshing.value = true
+        extendJob?.cancel()
+        _loadingMore.value = false
+        _loadingAll.value = false
         loadTags()
         loadCategoryCounts()
         viewModelScope.launch {
@@ -137,6 +148,7 @@ class ShelfViewModel : ViewModel() {
                     accumulated.clear()
                     accumulated.addAll(it.data)
                     _state.value = UiState.Success(accumulated.toList())
+                    _dataEpoch.value += 1
                 }
                 .onFailure { if (_state.value !is UiState.Success) _state.value = UiState.Error(it.friendlyMessage()) }
             _refreshing.value = false
@@ -157,6 +169,9 @@ class ShelfViewModel : ViewModel() {
     }
 
     fun reload() {
+        extendJob?.cancel()
+        _loadingMore.value = false
+        _loadingAll.value = false
         page = 1
         accumulated.clear()
         _state.value = UiState.Loading
@@ -174,30 +189,49 @@ class ShelfViewModel : ViewModel() {
     fun loadMore() {
         if (_loadingMore.value || _loadingAll.value || page >= pages) return
         _loadingMore.value = true
-        viewModelScope.launch {
-            repo.shelf(_shelfType.value, _category.value, page + 1)
-                .onSuccess {
-                    page += 1
-                    pages = it.pages
-                    accumulated.addAll(it.data)
-                    _state.value = UiState.Success(accumulated.toList())
-                }
-            _loadingMore.value = false
+        extendJob = viewModelScope.launch {
+            try {
+                repo.shelf(_shelfType.value, _category.value, page + 1)
+                    .onSuccess {
+                        page += 1
+                        pages = it.pages
+                        accumulated.addAll(it.data)
+                        _state.value = UiState.Success(accumulated.toList())
+                    }
+            } finally {
+                _loadingMore.value = false
+            }
         }
     }
 
-    /** 搜索时需要覆盖尚未滚动到的分页，否则本地过滤会漏掉早期收藏。 */
+    /**
+     * 搜索时需要覆盖尚未滚动到的分页，否则本地过滤会漏掉早期收藏。
+     * 剩余分页一次性并发请求（网络层按主机排队限流），总耗时≈最慢一页而非逐页累加；
+     * 每页按序合并后立即更新列表，命中结果随加载逐步出现。
+     */
     fun loadAll() {
-        if (_loadingMore.value || _loadingAll.value || page >= pages) return
+        if (_loadingAll.value || page >= pages) return
+        // 滚动加载在途时取消它并由本次接管：其结果尚未提交，不会产生缺口。
+        extendJob?.cancel()
+        _loadingMore.value = false
         _loadingAll.value = true
-        viewModelScope.launch {
+        val type = _shelfType.value
+        val category = _category.value
+        extendJob = viewModelScope.launch {
             try {
-                while (page < pages) {
-                    val nextPage = page + 1
-                    val result = repo.shelf(_shelfType.value, _category.value, nextPage)
-                    if (result.isFailure) break
-                    val response = result.getOrThrow()
-                    page = nextPage
+                val firstNew = page + 1
+                val deferreds = (firstNew..pages).map { p ->
+                    async { p to repo.shelf(type, category, p) }
+                }
+                for (deferred in deferreds) {
+                    if (_shelfType.value != type || _category.value != category) return@launch
+                    val (p, result) = deferred.await()
+                    val response = result.getOrElse {
+                        // 中途某页失败：保留已到部分，不越过缺失页（后续可重新触发补拉）。
+                        _toast.value = it.friendlyMessage()
+                        return@launch
+                    }
+                    page = p
                     pages = response.pages
                     accumulated.addAll(response.data)
                     _state.value = UiState.Success(accumulated.toList())

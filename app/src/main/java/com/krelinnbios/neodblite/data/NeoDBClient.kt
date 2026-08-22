@@ -2,6 +2,7 @@ package com.krelinnbios.neodblite.data
 
 import com.krelinnbios.neodblite.BuildConfig
 import com.krelinnbios.neodblite.ui.i18n.AppLanguagePreference
+import okhttp3.Dispatcher
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -21,6 +22,13 @@ class NeoDBClient(private val authStore: AuthStore) {
     private var currentHost: String = authStore.cachedHost
 
     val okHttpClient: OkHttpClient = OkHttpClient.Builder()
+        .dispatcher(
+            Dispatcher().apply {
+                maxRequests = 64
+                // 书架搜索需并发拉取剩余分页（默认 5/Host 会排队），适当放宽以降低总耗时
+                maxRequestsPerHost = 10
+            }
+        )
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)

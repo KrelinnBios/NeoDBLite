@@ -18,6 +18,9 @@ import androidx.compose.ui.unit.dp
  * 自适应页签：先测量各页签文案的理想宽度，若按等宽（maxWidth/数量）排布最宽的标签
  * 也能放下，就用固定 [TabRow]（中文等短标签均匀铺满、更美观）；否则回退
  * [ScrollableTabRow]，避免英文/日文等较长标签在等宽下被挤换行。
+ *
+ * 修复：暗黑模式下显式指定选中/未选中颜色与容器色，避免系统默认色在深色主题下对比度不足。
+ * 短中文（想要/进行中等）保持等宽 TabRow铺满，长英文自动回退为可横向滑动。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,14 +55,20 @@ fun <T> AdaptiveTabRow(
 
         val tabSlot: @Composable () -> Unit = {
             tabs.forEachIndexed { index, tab ->
+                val selected = index == safeIndex
                 Tab(
-                    selected = index == safeIndex,
+                    selected = selected,
                     onClick = { onSelect(tab) },
+                    selectedContentColor = MaterialTheme.colorScheme.primary,
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     text = {
                         Text(
                             text = label(tab),
+                            style = MaterialTheme.typography.titleSmall,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            color = if (selected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 )
@@ -68,9 +77,18 @@ fun <T> AdaptiveTabRow(
 
         val placeable = subcompose("content") {
             if (fits) {
-                TabRow(selectedTabIndex = safeIndex) { tabSlot() }
+                TabRow(
+                    selectedTabIndex = safeIndex,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary
+                ) { tabSlot() }
             } else {
-                ScrollableTabRow(selectedTabIndex = safeIndex, edgePadding = 0.dp) { tabSlot() }
+                ScrollableTabRow(
+                    selectedTabIndex = safeIndex,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    edgePadding = 0.dp
+                ) { tabSlot() }
             }
         }.first().measure(constraints)
 

@@ -117,7 +117,8 @@ fun ProfilePage(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 24.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp)
         ) {
             item { ProfileHeader(user = user, host = host, bio = profileBio, onOpenSettings = { showSettings = true }) }
 
@@ -175,7 +176,7 @@ private fun ProfileHeader(
     }
     var bioExpanded by remember(user.url, user.username, user.externalAcct) { mutableStateOf(false) }
     Surface(
-        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).fillMaxWidth(),
+        modifier = Modifier.padding(horizontal = 12.dp).fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
@@ -514,7 +515,7 @@ private fun CollectionsEntry(onClick: () -> Unit) {
     val strings = LocalAppStrings.current
     Surface(
         modifier = Modifier
-            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .padding(horizontal = 12.dp)
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
@@ -546,7 +547,7 @@ private fun ShelfSummary(
 ) {
     val total = ShelfType.entries.sumOf { counts[it] ?: 0 }
     Surface(
-        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).fillMaxWidth(),
+        modifier = Modifier.padding(horizontal = 12.dp).fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
@@ -647,7 +648,7 @@ private fun RecentSection(
     onOpenItem: (ItemBrief) -> Unit
 ) {
     Surface(
-        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).fillMaxWidth(),
+        modifier = Modifier.padding(horizontal = 12.dp).fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow
     ) {

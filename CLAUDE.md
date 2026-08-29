@@ -40,7 +40,7 @@
 - APK 文件名固定为 `NeoDB-Lite.apk`。
 - 应用内更新源为 `KrelinnBios/NeoDBLite` 的 GitHub Releases。
 - 界面语言不使用 Android 资源本地化，统一走应用内字符串表 `AppLanguage` / `AppStrings`。
-- `AGENTS.md` 仅指向本文件，并额外要求提交代码时署名、摘要和描述使用中文。
+- `AGENTS.md` 仅指向本文件。
 
 ## 代码地图
 
@@ -189,7 +189,7 @@ Linux/macOS/CI 对应使用 `./gradlew`。
 - README 项目简介保留“以下说明仅描述 NeoDB Lite 当前实际提供的功能”这类范围说明。
 - 简体中文、繁體中文和 English README 的事实与结构保持一致；顶部图标共用 `icon/icon.svg`。
 - 中文文档统一使用 UTF-8，尤其避免 PowerShell 默认编码造成乱码。
-- 提交摘要和描述使用简短中文；提交代码时按仓库要求添加署名（sign-off）。
+- 提交摘要和描述使用简短中文。
 
 ## 回答本仓库相关问题时
 

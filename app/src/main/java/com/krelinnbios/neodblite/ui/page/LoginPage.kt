@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.ui.vm.AuthViewModel
+import com.krelinnbios.neodblite.ui.vm.LoginMessage
 import com.krelinnbios.neodblite.util.Browser
 
 @Composable
@@ -72,12 +73,15 @@ fun LoginPage(authVM: AuthViewModel) {
             Text(strings.login)
         }
 
-        message?.takeIf { it.isNotBlank() }?.let { text ->
+        message?.let { loginMessage ->
             Spacer(Modifier.height(16.dp))
             Text(
-                text = text,
+                text = loginMessage.text,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
+                color = when (loginMessage) {
+                    is LoginMessage.Progress -> MaterialTheme.colorScheme.primary
+                    is LoginMessage.Error -> MaterialTheme.colorScheme.error
+                },
                 textAlign = TextAlign.Center
             )
         }
@@ -91,5 +95,4 @@ fun LoginPage(authVM: AuthViewModel) {
         )
     }
 }
-
 

@@ -20,7 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -310,11 +310,11 @@ private fun DetailContent(
                 )
                 if (briefCollapsible) {
                     val briefArrowRotation by animateFloatAsState(
-                        targetValue = if (briefExpanded) 180f else 0f,
+                        targetValue = if (briefExpanded) 90f else 0f,
                         label = "briefArrowRotation"
                     )
                     Icon(
-                        imageVector = Icons.Filled.ArrowDropDown,
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.rotate(briefArrowRotation)

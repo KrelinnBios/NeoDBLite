@@ -248,7 +248,6 @@ fun ShelfPage(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 placeholder = { Text(strings.searchPlaceholder) },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { searchQuery = "" }) {

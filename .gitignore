@@ -12,6 +12,7 @@ build/
 .kotlin/
 
 # Android
+.android/
 local.properties
 .externalNativeBuild/
 .cxx/

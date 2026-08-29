@@ -22,7 +22,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 concurrency:
-  group: build-apk-${{ github.ref }}
+  group: build-apk-${{ github.event.release.tag_name || inputs.release_tag || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -34,6 +34,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.release_tag || github.ref }}
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5

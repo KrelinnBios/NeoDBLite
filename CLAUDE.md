@@ -64,7 +64,7 @@
 - `ui/theme/`、`ui/i18n/`：主题与应用内多语言。
 - `util/AppUpdateManager.kt`：应用内更新。
 - `util/CommunityHtmlParser.kt`、`util/ProfileHtmlParser.kt`、`util/ProfileUrl.kt`：外部页面内容与链接处理。
-- `app/src/test/`：JVM 单元测试，覆盖鉴权 host、更新解析、标记提交、社区内容和个人主页解析等部分逻辑。
+- `app/src/test/`：JVM 单元测试，覆盖鉴权 host、更新解析、标记提交、社区内容和我的主页解析等部分逻辑。
 - `.github/workflows/ci.yml`：日常编译与 JVM 单测门禁。
 - `.github/workflows/build-apk.yml`：手动或 Release 的签名 APK 构建。
 
@@ -80,7 +80,7 @@
 - 标记管理：设置书架状态、0～10 评分、短评、标签、可见性和联邦宇宙同步选项，支持修改与删除。
 - 我的书架：按状态、类目或标签分页查看标记，支持标题过滤与日历视图。
 - 收藏单：查看自己的收藏单及条目，当前为只读，不支持创建或编辑。
-- 个人主页：展示资料、书架统计、最近完成条目和收藏单入口；设置通过弹窗承载。
+- 我的主页：展示资料、书架统计、最近完成条目和收藏单入口；设置通过弹窗承载。
 - 主题与语言：多套配色主题以及简体中文、繁體中文、English 应用内切换。
 - 应用更新：启动静默检查和手动检查，支持多源下载、APK 版本与签名校验、系统安装器。
 
@@ -104,7 +104,7 @@ Linux/macOS/CI 对应使用 `./gradlew`。
 验证约定：
 
 - Kotlin 改动至少运行 `compileDebugKotlin`。
-- 改到更新解析、host 归一化、标记提交、社区内容或个人主页解析等已有测试覆盖的模块时，同时运行 `testDebugUnitTest`。
+- 改到更新解析、host 归一化、标记提交、社区内容或我的主页解析等已有测试覆盖的模块时，同时运行 `testDebugUnitTest`。
 - 新增可由纯 JVM 验证的逻辑时，补充或更新 `app/src/test/` 下的单元测试。
 - 纯文档、图片或资源说明修改无需运行 Gradle。
 - 增量构建出现缓存损坏时再使用 `clean assembleDebug`，不要把 `clean` 当作默认命令。
@@ -131,7 +131,7 @@ Linux/macOS/CI 对应使用 `./gradlew`。
 - NeoDB 实例可配置，默认是 `neodb.social`；host 归一化统一走 `AuthStore.normalizeHost`。
 - `NeoDBClient.configure(host)` 在实例变化时重建 Retrofit；token 变化不要求重建。
 - 条目详情使用条目自身携带的 `api_url` 经 `@Url` 请求，避免 `tv/season` 等类目路径差异。
-- 个人主页和部分社区内容依赖外部 HTML 解析；修改解析器时应尽量基于真实样本和精确条件。
+- 我的主页和部分社区内容依赖外部 HTML 解析；修改解析器时应尽量基于真实样本和精确条件。
 
 ## 已确立的行为与历史约束
 

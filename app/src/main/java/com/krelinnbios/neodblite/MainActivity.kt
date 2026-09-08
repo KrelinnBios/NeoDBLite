@@ -231,7 +231,7 @@ private fun MainScaffold(
         }
     }
 
-    // 从个人主页的统计卡片跳到书架，并选中对应状态。
+    // 从我的主页的统计卡片跳到书架，并选中对应状态。
     val openShelf: (ShelfType) -> Unit = { type ->
         shelfVM.selectShelf(type)
         if (currentRoute != "shelf") {

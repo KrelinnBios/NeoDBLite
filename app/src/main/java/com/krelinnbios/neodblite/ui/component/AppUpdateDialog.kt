@@ -124,11 +124,7 @@ fun AppUpdateDialog(info: AppUpdateInfo, onDismiss: () -> Unit) {
 
                     UpdateDownloadState.READY -> {
                         Text(
-                            text = buildString {
-                                appendLine("${strings.targetVersionPrefix}v${info.versionName}")
-                                appendLine()
-                                append(info.releaseNotes.ifBlank { strings.newVersionReleased })
-                            },
+                            text = info.releaseNotes.ifBlank { strings.newVersionReleased },
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }

@@ -77,6 +77,12 @@ interface NeoDBApi {
     @GET("api/me/collection/")
     suspend fun myCollections(@Query("page") page: Int): PagedCollections
 
+    @GET("api/user/{handle}/collection/liked/")
+    suspend fun likedCollections(
+        @Path("handle") handle: String,
+        @Query("page") page: Int
+    ): PagedCollections
+
     @GET("api/collection/{uuid}")
     suspend fun collection(@Path("uuid") uuid: String): Collection
 

@@ -28,13 +28,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.krelinnbios.neodblite.data.model.Collection
 import com.krelinnbios.neodblite.ui.UiState
+import com.krelinnbios.neodblite.ui.component.AdaptiveTabRow
 import com.krelinnbios.neodblite.ui.component.CoverImage
 import com.krelinnbios.neodblite.ui.component.EmptyBox
 import com.krelinnbios.neodblite.ui.component.ErrorBox
@@ -42,16 +45,28 @@ import com.krelinnbios.neodblite.ui.component.LoadingBox
 import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.ui.vm.CollectionsViewModel
 
+private enum class CollectionTab {
+    LIKED,
+    CREATED
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CollectionsPage(
     collectionsVM: CollectionsViewModel,
+    userHandle: String,
     onBack: () -> Unit,
     onOpenCollection: (Collection) -> Unit
 ) {
     val strings = LocalAppStrings.current
     val state by collectionsVM.state.collectAsState()
     val loadingMore by collectionsVM.loadingMore.collectAsState()
+    var selectedTab by remember { mutableStateOf(CollectionTab.LIKED) }
+    val tabs = CollectionTab.entries
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(userHandle) { collectionsVM.load(userHandle) }
+    LaunchedEffect(selectedTab) { listState.scrollToItem(0) }
 
     Scaffold(
         topBar = {
@@ -68,36 +83,61 @@ fun CollectionsPage(
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            when (val s = state) {
-                is UiState.Loading -> LoadingBox()
-                is UiState.Error -> ErrorBox(s.message, onRetry = { collectionsVM.load() })
-                is UiState.Success -> {
-                    if (s.data.isEmpty()) {
-                        EmptyBox(strings.noContent)
-                    } else {
-                        val listState = rememberLazyListState()
-                        val shouldLoadMore by remember {
-                            derivedStateOf {
-                                val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-                                val total = listState.layoutInfo.totalItemsCount
-                                total > 0 && last >= total - 3
-                            }
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            AdaptiveTabRow(
+                tabs = tabs,
+                selectedIndex = tabs.indexOf(selectedTab),
+                label = {
+                    when (it) {
+                        CollectionTab.LIKED -> strings.likedCollections
+                        CollectionTab.CREATED -> strings.createdCollections
+                    }
+                },
+                onSelect = { selectedTab = it }
+            )
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                when (val s = state) {
+                    is UiState.Loading -> LoadingBox()
+                    is UiState.Error -> ErrorBox(
+                        s.message,
+                        onRetry = { collectionsVM.load(userHandle) }
+                    )
+                    is UiState.Success -> {
+                        val collections = when (selectedTab) {
+                            CollectionTab.LIKED -> s.data.liked
+                            CollectionTab.CREATED -> s.data.created
                         }
-                        LaunchedEffect(shouldLoadMore) {
-                            if (shouldLoadMore) collectionsVM.loadMore()
-                        }
-                        LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-                            items(s.data) { c ->
-                                CollectionRow(collection = c, onClick = { onOpenCollection(c) })
+                        if (collections.isEmpty()) {
+                            EmptyBox(strings.noContent)
+                        } else {
+                            val shouldLoadMore by remember {
+                                derivedStateOf {
+                                    val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                                    val total = listState.layoutInfo.totalItemsCount
+                                    total > 0 && last >= total - 3
+                                }
                             }
-                            if (loadingMore) {
-                                item {
-                                    Box(
-                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(strings.loadingMore, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            LaunchedEffect(shouldLoadMore, collections.size, selectedTab) {
+                                if (shouldLoadMore) {
+                                    collectionsVM.loadMore(selectedTab == CollectionTab.LIKED)
+                                }
+                            }
+                            LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                                items(collections) { c ->
+                                    CollectionRow(collection = c, onClick = { onOpenCollection(c) })
+                                }
+                                if (loadingMore) {
+                                    item {
+                                        Box(
+                                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                strings.loadingMore,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -132,7 +172,7 @@ private fun CollectionRow(collection: Collection, onClick: () -> Unit) {
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            collection.itemCount?.let {
+            collection.totalItemCount?.let {
                 Spacer(Modifier.height(2.dp))
                 Text(
                     text = "$it ${strings.itemsCount}",

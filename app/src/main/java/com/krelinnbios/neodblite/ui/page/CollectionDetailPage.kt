@@ -142,7 +142,7 @@ private fun CollectionHeader(collection: Collection) {
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                collection.itemCount?.let {
+                collection.totalItemCount?.let {
                     Spacer(Modifier.height(6.dp))
                     Text(
                         text = "$it ${strings.itemsCount}",

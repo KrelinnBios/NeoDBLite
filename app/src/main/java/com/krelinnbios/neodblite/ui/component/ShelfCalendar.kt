@@ -37,9 +37,8 @@ import com.krelinnbios.neodblite.data.model.MarkSchema
 import java.util.Calendar
 
 /**
- * 书架标记热力图（月历）。基于已加载的 [marks] 的 created_time 统计每天的标记数，
+ * 书架标记热力图（月历）。基于 [marks] 的 created_time 统计每天的标记数，
  * 有标记的日子按数量深浅高亮；点某天回调 [onSelectDay]（再点同一天取消，返回 null）。
- * 数据仅覆盖已加载的标记，往更早月份翻看需先在列表里多滚动加载。
  */
 @Composable
 fun ShelfCalendar(

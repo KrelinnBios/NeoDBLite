@@ -312,6 +312,17 @@ private fun MainScaffold(
                 val collectionsVM: CollectionsViewModel = viewModel()
                 CollectionsPage(
                     collectionsVM = collectionsVM,
+                    userHandle = userName.username
+                        ?.trim()
+                        ?.removePrefix("@")
+                        ?.substringBefore('@')
+                        ?.takeIf { it.isNotBlank() }
+                        ?: userName.externalAcct
+                            ?.trim()
+                            ?.removePrefix("@")
+                            ?.substringBefore('@')
+                            ?.takeIf { it.isNotBlank() }
+                            .orEmpty(),
                     onBack = { navController.popBackStack() },
                     onOpenCollection = { c ->
                         c.uuid?.let { navController.navigate("collectionDetail?uuid=$it") }

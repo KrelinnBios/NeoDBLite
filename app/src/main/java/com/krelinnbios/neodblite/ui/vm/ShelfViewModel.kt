@@ -7,6 +7,7 @@ import com.krelinnbios.neodblite.data.model.MarkInRequest
 import com.krelinnbios.neodblite.data.model.MarkSchema
 import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.data.model.Tag
+import com.krelinnbios.neodblite.data.model.TagItem
 import com.krelinnbios.neodblite.global.App
 import com.krelinnbios.neodblite.global.MarkEventBus
 import com.krelinnbios.neodblite.ui.UiState
@@ -67,6 +68,10 @@ class ShelfViewModel : ViewModel() {
     private val _tagCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val tagCounts: StateFlow<Map<String, Int>> = _tagCounts.asStateFlow()
 
+    /** 各标签涉及的类目（key 为标签 uuid）。标签接口本身不含类目，由条目接口第一页的 item.category 推导，用于按当前类目过滤标签列表。 */
+    private val _tagCategories = MutableStateFlow<Map<String, Set<Category>>>(emptyMap())
+    val tagCategories: StateFlow<Map<String, Set<Category>>> = _tagCategories.asStateFlow()
+
     private var loadingTags = false
 
     init {
@@ -104,17 +109,22 @@ class ShelfViewModel : ViewModel() {
         }
     }
 
-    /** 并发拉取各标签的条目总数（每个标签取条目接口第一页的 count），与类目数量同一套展示口径。 */
+    /** 并发拉取各标签的条目总数（每个标签取条目接口第一页的 count），同时用该页条目推导标签涉及的类目。 */
     private fun loadTagCounts(tags: List<Tag>) {
         viewModelScope.launch {
-            val counts = tags.mapNotNull { it.uuid }
+            val responses = tags.mapNotNull { it.uuid }
                 .map { uuid ->
-                    async { uuid to repo.tagItems(uuid, 1).getOrNull()?.count }
+                    async { uuid to repo.tagItems(uuid, 1).getOrNull() }
                 }
                 .awaitAll()
-                .mapNotNull { (uuid, count) -> count?.let { uuid to it } }
+            val counts = responses
+                .mapNotNull { (uuid, response) -> response?.let { uuid to it.count } }
+                .toMap()
+            val categories = responses
+                .mapNotNull { (uuid, response) -> response?.let { uuid to tagCategoriesOf(it.data) } }
                 .toMap()
             _tagCounts.value = counts
+            _tagCategories.value = categories
         }
     }
 
@@ -280,3 +290,7 @@ class ShelfViewModel : ViewModel() {
 
     val canLoadMore: Boolean get() = page < pages
 }
+
+/** 从标签条目页推导该标签涉及的类目集合；条目无类目信息时忽略。 */
+internal fun tagCategoriesOf(items: List<TagItem>): Set<Category> =
+    items.mapNotNull { it.item?.let { item -> Category.fromApi(item.category ?: item.type) } }.toSet()

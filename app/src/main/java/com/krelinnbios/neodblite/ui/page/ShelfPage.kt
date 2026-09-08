@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -44,8 +46,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.krelinnbios.neodblite.data.model.Category
@@ -90,6 +94,7 @@ fun ShelfPage(
     val userTags by shelfVM.userTags.collectAsState()
     val tagsLoadFailed by shelfVM.tagsLoadFailed.collectAsState()
     val tagCounts by shelfVM.tagCounts.collectAsState()
+    val tagCategories by shelfVM.tagCategories.collectAsState()
     val categoryCounts by shelfVM.categoryCounts.collectAsState()
     val allCategoryCount = categoryCounts.takeIf { it.size == Category.entries.size }?.values?.sum()
 
@@ -154,13 +159,10 @@ fun ShelfPage(
                         else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                DropdownMenu(
+                CompactDropdownMenu(
                     expanded = catExpanded,
                     onDismissRequest = { catExpanded = false },
-                    // widthIn 在外、width(IntrinsicSize.Max) 在内：面板贴合最宽条目文本，同时不超上限。
-                    modifier = Modifier
-                        .widthIn(max = 220.dp)
-                        .width(IntrinsicSize.Max)
+                    maxWidth = 220.dp
                 ) {
                     CompactMenuItem(
                         label = menuLabel(strings.all, allCategoryCount),
@@ -193,13 +195,10 @@ fun ShelfPage(
                         else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                DropdownMenu(
+                CompactDropdownMenu(
                     expanded = tagsExpanded,
                     onDismissRequest = { tagsExpanded = false },
-                    // widthIn 在外、width(IntrinsicSize.Max) 在内：面板贴合最宽条目文本，同时不超上限。
-                    modifier = Modifier
-                        .widthIn(max = 240.dp)
-                        .width(IntrinsicSize.Max)
+                    maxWidth = 240.dp
                 ) {
                     CompactMenuItem(
                         label = strings.all,
@@ -207,7 +206,13 @@ fun ShelfPage(
                         else MaterialTheme.colorScheme.onSurface,
                         onClick = { selectedTag = null; tagsExpanded = false }
                     )
-                    if (userTags.isEmpty()) {
+                    // 选中类目时只展示该标签涉及当前类目、与本页筛选口径一致的标签。
+                    val visibleTags = if (category == null) {
+                        userTags
+                    } else {
+                        userTags.filter { tagCategories[it.uuid]?.contains(category) == true }
+                    }
+                    if (visibleTags.isEmpty()) {
                         CompactMenuItem(
                             label = if (tagsLoadFailed) strings.networkError else strings.noContent,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -217,7 +222,7 @@ fun ShelfPage(
                             }
                         )
                     }
-                    userTags.forEach { tag ->
+                    visibleTags.forEach { tag ->
                         CompactMenuItem(
                             // API 标签列表不返回 item_count，数量来自 tagCounts（逐标签查询）；itemCount 仅作兜底。
                             label = menuLabel(tag.bestTitle, tagCounts[tag.uuid] ?: tag.itemCount),
@@ -298,8 +303,8 @@ fun ShelfPage(
 
                         val dataLoaded = state is UiState.Success
                         // dataEpoch：下拉刷新会把数据重置回第一页，需要重新触发全量拉取。
-                        LaunchedEffect(query, dataLoaded, dataEpoch) {
-                            if (query.isNotBlank()) shelfVM.loadAll()
+                        LaunchedEffect(query, showCalendar, dataLoaded, dataEpoch) {
+                            if (query.isNotBlank() || showCalendar) shelfVM.loadAll()
                         }
 
                         Column(modifier = Modifier.fillMaxSize()) {
@@ -309,6 +314,11 @@ fun ShelfPage(
                                     selectedDay = selectedDay,
                                     onSelectDay = { selectedDay = it }
                                 )
+                                if (loadingAll) {
+                                    LinearProgressIndicator(
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                                    )
+                                }
                             }
 
                             if (displayed.isEmpty()) {
@@ -323,7 +333,7 @@ fun ShelfPage(
                                     }
                                 }
                                 LaunchedEffect(shouldLoadMore) {
-                                    if (shouldLoadMore && query.isBlank()) shelfVM.loadMore()
+                                    if (shouldLoadMore && query.isBlank() && !showCalendar) shelfVM.loadMore()
                                 }
 
                                 PullToRefreshBox(
@@ -490,10 +500,28 @@ private fun TagItemsContent(
     }
 }
 
-/**
- * 下拉菜单的紧凑条目：宽度跟随文本内容，避开 DropdownMenuItem 自带的 112dp 最小宽度，
- * 配合菜单上的 width(IntrinsicSize.Max) 让面板贴合最宽条目。
- */
+@Composable
+private fun CompactDropdownMenu(
+    expanded: Boolean,
+    onDismissRequest: () -> Unit,
+    maxWidth: Dp,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.45f).dp
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismissRequest,
+        modifier = Modifier.heightIn(max = maxHeight)
+    ) {
+        Column(
+            modifier = Modifier
+                .width(IntrinsicSize.Max)
+                .widthIn(max = maxWidth),
+            content = content
+        )
+    }
+}
+
 @Composable
 private fun CompactMenuItem(
     label: String,

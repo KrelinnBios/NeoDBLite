@@ -10,11 +10,15 @@ data class Collection(
     val brief: String? = null,
     @SerializedName("cover_image_url") val coverImageUrl: String? = null,
     @SerializedName("item_count") val itemCount: Int? = null,
+    @SerializedName("item_count_by_category") val itemCountByCategory: Map<String, Int> = emptyMap(),
     val visibility: Int = 0,
     @SerializedName("created_time") val createdTime: String? = null
 ) {
     val bestTitle: String
         get() = title?.takeIf { it.isNotBlank() } ?: "未命名合集"
+
+    val totalItemCount: Int?
+        get() = itemCount ?: itemCountByCategory.values.sum().takeIf { itemCountByCategory.isNotEmpty() }
 }
 
 data class PagedCollections(

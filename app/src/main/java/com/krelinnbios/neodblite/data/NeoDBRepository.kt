@@ -43,6 +43,9 @@ class NeoDBRepository(private val client: NeoDBClient) {
 
     suspend fun myCollections(page: Int): Result<PagedCollections> = io { api.myCollections(page) }
 
+    suspend fun likedCollections(handle: String, page: Int): Result<PagedCollections> =
+        io { api.likedCollections(handle, page) }
+
     suspend fun collection(uuid: String): Result<Collection> = io { api.collection(uuid) }
 
     suspend fun collectionItems(uuid: String, page: Int): Result<PagedCollectionItems> =

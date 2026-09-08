@@ -33,7 +33,7 @@ NeoDB Lite 是面向 [NeoDB](https://neodb.social) 及相容實例的非官方 A
 - 條目詳情：查看封面、簡介、標籤、外部連結、評分與社群內容。
 - 條目標記：設定書架狀態、評分、短評、標籤與可見性。
 - 我的書架：按狀態、類目、標籤或關鍵字篩選，支援修改、刪除和日曆檢視。
-- 個人主頁：查看個人資料、書架統計、最近完成條目，以及自己建立和收藏的收藏單。
+- 我的主頁：查看個人資料、書架統計、最近完成條目，以及自己建立和收藏的收藏單。
 - 個性設定：切換主題和介面語言，檢查更新或登出。
 
 ## 介面預覽
@@ -42,7 +42,7 @@ NeoDB Lite 是面向 [NeoDB](https://neodb.social) 及相容實例的非官方 A
   <img src="screenshots/Screenshot_2026-06-30-18-12-40-43_8d633091d37a6aa.jpg" width="19%" alt="發現頁">
   <img src="screenshots/Screenshot_2026-06-30-18-12-53-95_8d633091d37a6aa.jpg" width="19%" alt="書架">
   <img src="screenshots/Screenshot_2026-06-30-18-13-36-45_8d633091d37a6aa.jpg" width="19%" alt="條目詳情">
-  <img src="screenshots/Screenshot_2026-06-30-18-14-24-14_8d633091d37a6aa.jpg" width="19%" alt="個人主頁">
+  <img src="screenshots/Screenshot_2026-06-30-18-14-24-14_8d633091d37a6aa.jpg" width="19%" alt="我的主頁">
   <img src="screenshots/Screenshot_2026-06-30-18-17-47-14_8d633091d37a6aa.jpg" width="19%" alt="設定">
 </p>
 

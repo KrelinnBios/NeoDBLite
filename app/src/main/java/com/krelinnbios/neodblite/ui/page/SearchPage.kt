@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -45,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -192,26 +194,31 @@ private fun SearchField(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
                     modifier = Modifier
-                        .widthIn(max = 220.dp)
-                        .width(IntrinsicSize.Max)
+                        .heightIn(max = (LocalConfiguration.current.screenHeightDp * 0.45f).dp)
                 ) {
-                    SearchCategoryItem(
-                        label = strings.all,
-                        selected = category == null,
-                        onClick = {
-                            expanded = false
-                            onCategoryChange(null)
-                        }
-                    )
-                    Category.entries.forEach { cat ->
+                    Column(
+                        modifier = Modifier
+                            .width(IntrinsicSize.Max)
+                            .widthIn(max = 220.dp)
+                    ) {
                         SearchCategoryItem(
-                            label = strings.categoryLabel(cat),
-                            selected = cat == category,
+                            label = strings.all,
+                            selected = category == null,
                             onClick = {
                                 expanded = false
-                                onCategoryChange(cat)
+                                onCategoryChange(null)
                             }
                         )
+                        Category.entries.forEach { cat ->
+                            SearchCategoryItem(
+                                label = strings.categoryLabel(cat),
+                                selected = cat == category,
+                                onClick = {
+                                    expanded = false
+                                    onCategoryChange(cat)
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -348,7 +355,7 @@ private fun SearchCategoryItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     )
 }
 

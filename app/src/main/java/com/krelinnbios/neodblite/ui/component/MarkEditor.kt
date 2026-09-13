@@ -377,6 +377,7 @@ fun MarkEditor(
 
         if (specifyDate) {
             Spacer(Modifier.height(8.dp))
+            val hasDateWarning = markDateInputHasWarning(selectedDate.text)
             OutlinedTextField(
                 value = selectedDate,
                 onValueChange = {
@@ -386,8 +387,8 @@ fun MarkEditor(
                 label = { Text("${strings.markDate} (YYYY-MM-DD)") },
                 visualTransformation = markDateVisualTransformation,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                isError = dateError,
-                supportingText = if (dateError) ({ Text(strings.invalidMarkDate) }) else null,
+                isError = hasDateWarning,
+                supportingText = if (hasDateWarning) ({ Text(strings.invalidMarkDate) }) else null,
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )

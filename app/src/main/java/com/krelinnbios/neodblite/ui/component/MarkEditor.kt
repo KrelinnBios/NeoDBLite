@@ -308,7 +308,6 @@ fun MarkEditor(
         )
 
         Spacer(Modifier.height(12.dp))
-        val showTagWarning = hasInvalidMarkTagInput(tagsTextValue.text)
         OutlinedTextField(
             value = tagsTextValue,
             onValueChange = {
@@ -316,10 +315,6 @@ fun MarkEditor(
                 tagError = false
             },
             label = { Text(strings.tagsOptional) },
-            textStyle = if (showTagWarning) LocalTextStyle.current.copy(
-                color = MaterialTheme.colorScheme.primary,
-                textDecoration = TextDecoration.LineThrough
-            ) else LocalTextStyle.current,
             isError = tagError,
             supportingText = if (tagError) {
                 { Text(strings.invalidTagInput) }
@@ -388,8 +383,7 @@ fun MarkEditor(
                     selectedDate = updateMarkDateInput(selectedDate, it)
                     dateError = false
                 },
-                label = { Text(strings.markDate) },
-                placeholder = { Text("YYYY-MM-DD") },
+                label = { Text("${strings.markDate} (YYYY-MM-DD)") },
                 visualTransformation = markDateVisualTransformation,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                 isError = dateError,

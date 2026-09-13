@@ -443,7 +443,7 @@ val ZH_HANS = AppStrings(
     noBio = "暂无简介",
     specifyMarkDate = "指定标记日期",
     markDate = "标记日期",
-    invalidMarkDate = "请输入有效日期（YYYY-MM-DD）"
+    invalidMarkDate = "请输入有效日期"
     , invalidTagInput = "标签不能包含逗号、中文逗号或顿号"
 )
 
@@ -557,7 +557,7 @@ val ZH_HANT = ZH_HANS.copy(
     noBio = "暫無簡介",
     specifyMarkDate = "指定標記日期",
     markDate = "標記日期",
-    invalidMarkDate = "請輸入有效日期（YYYY-MM-DD）"
+    invalidMarkDate = "請輸入有效日期"
     , invalidTagInput = "標籤不能包含逗號、中文逗號或頓號"
 )
 
@@ -672,7 +672,7 @@ val EN = ZH_HANS.copy(
     noBio = "No bio yet",
     specifyMarkDate = "Specify mark date",
     markDate = "Mark date",
-    invalidMarkDate = "Enter a valid date (YYYY-MM-DD)"
+    invalidMarkDate = "Enter a valid date"
     , invalidTagInput = "Tags cannot contain commas or ideographic commas"
 )
 

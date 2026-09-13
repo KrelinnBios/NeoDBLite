@@ -199,6 +199,7 @@ fun MarkEditor(
         mutableStateOf(TextFieldValue(date.replace("-", "")))
     }
     var dateError by remember(existing) { mutableStateOf(false) }
+    var tagError by remember(existing) { mutableStateOf(false) }
     var tagFieldFocused by remember { mutableStateOf(false) }
 
     var allTags by remember { mutableStateOf<List<Tag>>(emptyList()) }
@@ -307,12 +308,20 @@ fun MarkEditor(
         )
 
         Spacer(Modifier.height(12.dp))
+        val showTagWarning = hasInvalidMarkTagInput(tagsTextValue.text)
         OutlinedTextField(
             value = tagsTextValue,
-            onValueChange = { tagsTextValue = it },
+            onValueChange = {
+                tagsTextValue = it
+                tagError = false
+            },
             label = { Text(strings.tagsOptional) },
-            isError = hasInvalidMarkTagInput(tagsTextValue.text),
-            supportingText = if (hasInvalidMarkTagInput(tagsTextValue.text)) {
+            textStyle = if (showTagWarning) LocalTextStyle.current.copy(
+                color = MaterialTheme.colorScheme.primary,
+                textDecoration = TextDecoration.LineThrough
+            ) else LocalTextStyle.current,
+            isError = tagError,
+            supportingText = if (tagError) {
                 { Text(strings.invalidTagInput) }
             } else null,
             singleLine = true,
@@ -372,7 +381,6 @@ fun MarkEditor(
         }
 
         if (specifyDate) {
-            val showDateWarning = dateError || markDateInputHasWarning(selectedDate.text)
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = selectedDate,
@@ -384,10 +392,6 @@ fun MarkEditor(
                 placeholder = { Text("YYYY-MM-DD") },
                 visualTransformation = markDateVisualTransformation,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                textStyle = if (showDateWarning) LocalTextStyle.current.copy(
-                    color = MaterialTheme.colorScheme.primary,
-                    textDecoration = TextDecoration.LineThrough
-                ) else LocalTextStyle.current,
                 isError = dateError,
                 supportingText = if (dateError) ({ Text(strings.invalidMarkDate) }) else null,
                 singleLine = true,
@@ -415,9 +419,12 @@ fun MarkEditor(
             enabled = !saving,
             onClick = {
                 val createdTime = if (specifyDate) markDateToCreatedTime(formatMarkDateInput(selectedDate.text)) else null
-                if (hasInvalidMarkTagInput(tagsTextValue.text)) return@Button
                 if (specifyDate && (createdTime == null || markDateInputHasWarning(selectedDate.text))) {
                     dateError = true
+                    return@Button
+                }
+                if (hasInvalidMarkTagInput(tagsTextValue.text)) {
+                    tagError = true
                     return@Button
                 }
                 onSave(

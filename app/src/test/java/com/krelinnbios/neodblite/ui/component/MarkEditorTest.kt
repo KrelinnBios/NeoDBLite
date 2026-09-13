@@ -1,5 +1,6 @@
 package com.krelinnbios.neodblite.ui.component
 
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import com.google.gson.Gson
@@ -7,6 +8,7 @@ import com.krelinnbios.neodblite.data.model.MarkInRequest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Date
 import java.util.Locale
@@ -81,6 +83,108 @@ class MarkEditorTest {
     fun emptyTagQueryAllowsAnotherSuggestionAfterCompletion() {
         assertEquals("", markTagQuery(input("read ")))
         assertEquals("", markTagQuery(input("")))
+    }
+
+    @Test
+    fun markDateInputAddsSeparatorsAsSoonAsYearAndMonthAreComplete() {
+        val expected = listOf("", "2", "20", "202", "2020-", "2020-0", "2020-09-", "2020-09-1", "2020-09-14")
+        var value = input("")
+        expected.forEachIndexed { length, formatted ->
+            value = updateMarkDateInput(value, input("20200914".take(length)))
+            val transformed = markDateVisualTransformation.filter(AnnotatedString(value.text))
+
+            assertEquals(formatted, transformed.text.text)
+            assertEquals(formatted.length, transformed.offsetMapping.originalToTransformed(value.selection.end))
+        }
+    }
+
+    @Test
+    fun markDateInputAcceptsPastedDateAndPreservesSelection() {
+        val value = TextFieldValue("2020-09-14", selection = TextRange(7, 5))
+        val result = updateMarkDateInput(input(""), value)
+
+        assertEquals("20200914", result.text)
+        assertEquals(TextRange(6, 4), result.selection)
+        assertEquals("20200914", updateMarkDateInput(input(""), input(" 2020-09-14 ")).text)
+    }
+
+    @Test
+    fun markDateInputPreservesCursorWhenEditingInMiddle() {
+        val previous = input("20200914")
+        val value = TextFieldValue("20200814", selection = TextRange(6), composition = TextRange(4, 6))
+
+        assertEquals(value, updateMarkDateInput(previous, value))
+        assertEquals("2020-08-14", formatMarkDateInput(value.text))
+    }
+
+    @Test
+    fun markDateInputRejectsUnexpectedCharacters() {
+        val previous = input("2020")
+
+        listOf("2020x", "2020/09/14").forEach { text ->
+            assertEquals(previous, updateMarkDateInput(previous, input(text)))
+        }
+    }
+
+    @Test
+    fun markDateInputKeepsExtraDigitsVisibleAndWarns() {
+        val result = updateMarkDateInput(input("20200914"), input("202009149"))
+
+        assertEquals("202009149", result.text)
+        assertEquals("2020-09-149", formatMarkDateInput(result.text))
+        assertTrue(markDateInputHasWarning(result.text, today = "2020-09-14"))
+    }
+
+    @Test
+    fun markDateInputWarnsForFutureAndInvalidDates() {
+        listOf("20200915", "20201001", "20210101", "20200230", "20201301").forEach { digits ->
+            assertTrue(digits, markDateInputHasWarning(digits, today = "2020-09-14"))
+        }
+    }
+
+    @Test
+    fun markDateInputAllowsTodayPastDatesAndIncompleteInput() {
+        listOf("20200914", "20200913", "20191231", "20200229", "2020", "202009", "").forEach { digits ->
+            assertFalse(digits, markDateInputHasWarning(digits, today = "2020-09-14"))
+        }
+    }
+
+    @Test
+    fun markDateInputSupportsBackspacingAcrossBothSeparators() {
+        listOf("2020" to "202", "202009" to "2020-0").forEach { (digits, expected) ->
+            val previous = input(digits)
+            val transformed = markDateVisualTransformation.filter(AnnotatedString(digits))
+            val cursor = transformed.offsetMapping.transformedToOriginal(transformed.text.length)
+            val edited = TextFieldValue(digits.removeRange(cursor - 1, cursor), selection = TextRange(cursor - 1))
+            val result = updateMarkDateInput(previous, edited)
+
+            assertEquals(expected, formatMarkDateInput(result.text))
+        }
+        assertEquals("", updateMarkDateInput(input("20200914"), input("")).text)
+    }
+
+    @Test
+    fun markDateInputCursorMappingsStayValidAtEveryInputLength() {
+        for (length in 0..12) {
+            val transformed = markDateVisualTransformation.filter(AnnotatedString("202009149999".take(length)))
+            val mapping = transformed.offsetMapping
+            for (offset in 0..length) {
+                val displayedOffset = mapping.originalToTransformed(offset)
+                assertTrue(displayedOffset in 0..transformed.text.length)
+                assertEquals(offset, mapping.transformedToOriginal(displayedOffset))
+            }
+            val digitOffsets = (0..transformed.text.length).map(mapping::transformedToOriginal)
+            assertTrue(digitOffsets.all { it in 0..length })
+            assertEquals(digitOffsets.sorted(), digitOffsets)
+        }
+    }
+
+    @Test
+    fun autoFormattedMarkDateStillRequiresACompleteValidDate() {
+        assertEquals("2020-02-29T00:00:00Z", markDateToCreatedTime(formatMarkDateInput("20200229")))
+        listOf("2020", "202009", "2020091", "20200230").forEach { digits ->
+            assertNull(markDateToCreatedTime(formatMarkDateInput(digits)))
+        }
     }
 
     @Test

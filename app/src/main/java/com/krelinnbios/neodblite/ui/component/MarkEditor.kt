@@ -16,10 +16,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -39,8 +42,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.krelinnbios.neodblite.data.model.Category
 import com.krelinnbios.neodblite.data.model.ShelfType
@@ -97,6 +107,44 @@ internal fun completeMarkTag(value: TextFieldValue, tag: String): TextFieldValue
 internal fun currentMarkDate(now: Date = Date()): String =
     SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(now)
 
+internal fun formatMarkDateInput(digits: String): String = buildString {
+    digits.forEachIndexed { index, digit ->
+        append(digit)
+        if (index == 3 || index == 5) append('-')
+    }
+}
+
+internal fun updateMarkDateInput(previous: TextFieldValue, value: TextFieldValue): TextFieldValue {
+    if (value.text.any { it !in '0'..'9' && it != '-' && !it.isWhitespace() }) return previous
+    val digits = value.text.filter { it in '0'..'9' }
+
+    fun digitOffset(offset: Int) = value.text.take(offset).count { it in '0'..'9' }
+    fun digitRange(range: TextRange) = TextRange(digitOffset(range.start), digitOffset(range.end))
+
+    return value.copy(
+        text = digits,
+        selection = digitRange(value.selection),
+        composition = value.composition?.let(::digitRange)
+    )
+}
+
+// 分隔符只参与显示，光标移动和退格仍按数字处理。
+internal val markDateVisualTransformation = VisualTransformation { text ->
+    TransformedText(
+        AnnotatedString(formatMarkDateInput(text.text)),
+        object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int =
+                offset + (if (offset >= 4) 1 else 0) + (if (offset >= 6) 1 else 0)
+
+            override fun transformedToOriginal(offset: Int): Int = when {
+                offset <= 4 -> offset
+                offset <= 7 -> offset - 1
+                else -> offset - 2
+            }
+        }
+    )
+}
+
 internal fun markDateToCreatedTime(text: String): String? {
     val date = text.trim()
     if (!Regex("""[0-9]{4}-[0-9]{2}-[0-9]{2}""").matches(date)) return null
@@ -108,6 +156,13 @@ internal fun markDateToCreatedTime(text: String): String? {
     if (format.parse(date, position) == null || position.index != date.length) return null
     // 与书架及日历直接读取 created_time 日期部分的口径保持一致。
     return "${date}T00:00:00Z"
+}
+
+internal fun markDateInputHasWarning(digits: String, today: String = currentMarkDate()): Boolean {
+    if (digits.length > 8) return true
+    if (digits.length < 8) return false
+    val date = formatMarkDateInput(digits)
+    return markDateToCreatedTime(date) == null || date > today
 }
 
 internal fun sliderValueToGrade(value: Float): Int =
@@ -138,7 +193,8 @@ fun MarkEditor(
     // 未主动指定日期时省略 created_time，由服务端保留原时间或记录状态变更时间。
     var specifyDate by remember(existing) { mutableStateOf(false) }
     var selectedDate by remember(existing) {
-        mutableStateOf(existing?.createdTime?.takeIf { it.length >= 10 }?.take(10) ?: currentMarkDate())
+        val date = existing?.createdTime?.takeIf { it.length >= 10 }?.take(10) ?: currentMarkDate()
+        mutableStateOf(TextFieldValue(date.replace("-", "")))
     }
     var dateError by remember(existing) { mutableStateOf(false) }
     var tagFieldFocused by remember { mutableStateOf(false) }
@@ -189,7 +245,13 @@ fun MarkEditor(
                 FilterChip(
                     selected = type == shelf,
                     onClick = { shelf = type },
-                    label = { Text(strings.shelfLabel(type, category)) }
+                    label = { Text(strings.shelfLabel(type, category)) },
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = type == shelf,
+                        selectedBorderColor = MaterialTheme.colorScheme.primary,
+                        selectedBorderWidth = 1.dp
+                    )
                 )
             }
         }
@@ -222,7 +284,13 @@ fun MarkEditor(
                 FilterChip(
                     selected = item == visibility,
                     onClick = { visibility = item },
-                    label = { Text(strings.visibilityLabel(item)) }
+                    label = { Text(strings.visibilityLabel(item)) },
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = item == visibility,
+                        selectedBorderColor = MaterialTheme.colorScheme.primary,
+                        selectedBorderWidth = 1.dp
+                    )
                 )
             }
         }
@@ -298,15 +366,22 @@ fun MarkEditor(
         }
 
         if (specifyDate) {
+            val showDateWarning = dateError || markDateInputHasWarning(selectedDate.text)
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = selectedDate,
                 onValueChange = {
-                    selectedDate = it
+                    selectedDate = updateMarkDateInput(selectedDate, it)
                     dateError = false
                 },
                 label = { Text(strings.markDate) },
                 placeholder = { Text("YYYY-MM-DD") },
+                visualTransformation = markDateVisualTransformation,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                textStyle = if (showDateWarning) LocalTextStyle.current.copy(
+                    color = MaterialTheme.colorScheme.primary,
+                    textDecoration = TextDecoration.LineThrough
+                ) else LocalTextStyle.current,
                 isError = dateError,
                 supportingText = if (dateError) ({ Text(strings.invalidMarkDate) }) else null,
                 singleLine = true,
@@ -333,8 +408,8 @@ fun MarkEditor(
         Button(
             enabled = !saving,
             onClick = {
-                val createdTime = if (specifyDate) markDateToCreatedTime(selectedDate) else null
-                if (specifyDate && createdTime == null) {
+                val createdTime = if (specifyDate) markDateToCreatedTime(formatMarkDateInput(selectedDate.text)) else null
+                if (specifyDate && (createdTime == null || markDateInputHasWarning(selectedDate.text))) {
                     dateError = true
                     return@Button
                 }

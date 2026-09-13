@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -103,7 +104,7 @@ fun ShelfPage(
     // 选中标签后进入「标签模式」，展示该标签下的全部条目；切换书架状态会退出标签模式。
     var selectedTag by remember(shelfType) { mutableStateOf<Tag?>(null) }
     var showSearch by remember { mutableStateOf(false) }
-    var searchQuery by remember(shelfType, category, selectedTag) { mutableStateOf("") }
+    var searchQuery by remember(shelfType, category, selectedTag) { mutableStateOf(TextFieldValue("")) }
     var editingMark by remember { mutableStateOf<MarkSchema?>(null) }
 
     LaunchedEffect(toast) {
@@ -254,8 +255,10 @@ fun ShelfPage(
                 onValueChange = { searchQuery = it },
                 placeholder = { Text(strings.searchPlaceholder) },
                 trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
+                    if (searchQuery.text.isNotEmpty()) {
+                        IconButton(onClick = {
+                            searchQuery = TextFieldValue("")
+                        }) {
                             Icon(Icons.Filled.Close, contentDescription = strings.clearInput)
                         }
                     }
@@ -263,7 +266,7 @@ fun ShelfPage(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
             )
-            val q = searchQuery.trim()
+            val q = searchQuery.text.trim()
             val isSearchLoading = q.isNotEmpty() && (loadingAll || tagLoadingAll)
             if (isSearchLoading) {
                 LinearProgressIndicator(
@@ -273,7 +276,7 @@ fun ShelfPage(
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
-            val query = searchQuery.trim()
+            val query = searchQuery.text.trim()
             if (selectedTag != null) {
                 TagItemsContent(
                     tagItemsVM = tagItemsVM,
@@ -397,7 +400,8 @@ fun ShelfPage(
                         comment = mark.commentText.orEmpty(),
                         visibility = Visibility.fromApi(mark.visibility),
                         tags = mark.tags,
-                        shareToFediverse = false
+                        shareToFediverse = false,
+                        createdTime = mark.createdTime
                     ),
                     hasExisting = true,
                     onSave = { draft ->
@@ -410,7 +414,8 @@ fun ShelfPage(
                                 commentText = draft.comment.ifBlank { null },
                                 ratingGrade = draft.grade.takeIf { it > 0 },
                                 tags = draft.tags,
-                                postToFediverse = draft.shareToFediverse
+                                postToFediverse = draft.shareToFediverse,
+                                createdTime = draft.createdTime
                             ),
                             onSuccess = { selectedTagUuid?.let(tagItemsVM::load) }
                         )

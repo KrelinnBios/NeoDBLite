@@ -176,7 +176,8 @@ fun ItemDetailPage(
                             comment = it.commentText.orEmpty(),
                             visibility = Visibility.fromApi(it.visibility),
                             tags = it.tags,
-                            shareToFediverse = false
+                            shareToFediverse = false,
+                            createdTime = it.createdTime
                         )
                     },
                     hasExisting = mark != null,
@@ -189,7 +190,8 @@ fun ItemDetailPage(
                                 commentText = draft.comment.ifBlank { null },
                                 ratingGrade = draft.grade.takeIf { it > 0 },
                                 tags = draft.tags,
-                                postToFediverse = draft.shareToFediverse
+                                postToFediverse = draft.shareToFediverse,
+                                createdTime = draft.createdTime
                             )
                         )
                         showSheet = false

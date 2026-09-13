@@ -175,7 +175,10 @@ data class AppStrings(
     val themePurple: String,
     val close: String,
     val bio: String,
-    val noBio: String
+    val noBio: String,
+    val specifyMarkDate: String,
+    val markDate: String,
+    val invalidMarkDate: String
 ) {
     fun categoryLabel(category: Category?): String {
         val c = category ?: return ""
@@ -436,7 +439,10 @@ val ZH_HANS = AppStrings(
     themePurple = "暮紫·深",
     close = "关闭",
     bio = "个人简介",
-    noBio = "暂无简介"
+    noBio = "暂无简介",
+    specifyMarkDate = "指定标记日期",
+    markDate = "标记日期",
+    invalidMarkDate = "请输入有效日期（YYYY-MM-DD）"
 )
 
 val ZH_HANT = ZH_HANS.copy(
@@ -546,7 +552,10 @@ val ZH_HANT = ZH_HANS.copy(
     themePurple = "暮紫·深",
     close = "關閉",
     bio = "個人簡介",
-    noBio = "暫無簡介"
+    noBio = "暫無簡介",
+    specifyMarkDate = "指定標記日期",
+    markDate = "標記日期",
+    invalidMarkDate = "請輸入有效日期（YYYY-MM-DD）"
 )
 
 val EN = ZH_HANS.copy(
@@ -657,7 +666,10 @@ val EN = ZH_HANS.copy(
     themePurple = "Twilight Purple · Dark",
     close = "Close",
     bio = "Bio",
-    noBio = "No bio yet"
+    noBio = "No bio yet",
+    specifyMarkDate = "Specify mark date",
+    markDate = "Mark date",
+    invalidMarkDate = "Enter a valid date (YYYY-MM-DD)"
 )
 
 fun appStringsFor(language: AppLanguage): AppStrings = when (AppLanguage.resolve(language)) {

@@ -62,6 +62,7 @@ NeoDB Lite 处于稳定维护阶段，这是理解本仓库的最高优先级前
 - `app/src/test/`：JVM 单元测试，覆盖鉴权 host、更新解析、标记提交、社区内容和我的主页解析等部分逻辑。
 - `.github/workflows/ci.yml`：日常编译与 JVM 单测门禁。
 - `.github/workflows/build-apk.yml`：手动或 Release 的签名 APK 构建。
+- `.github/workflows/release.yml`：读取 `.github/release-version` 创建 Release，并触发签名 APK 构建。
 
 不要仅凭目录名判断职责；需要追溯行为时先搜索目标 symbol 的定义和引用。
 
@@ -72,9 +73,9 @@ NeoDB Lite 处于稳定维护阶段，这是理解本仓库的最高优先级前
 - 实例登录：填写 NeoDB 实例域名，通过 Mastodon 兼容 OAuth 授权码流程登录并持久化令牌。
 - 发现与搜索：按类目查看趋势榜、跨类目或按类目搜索、分页加载、管理最近搜索历史。
 - 条目详情：展示封面、评分、简介、标签、外部来源、账号标记和公开的短评、长评、笔记等社区内容。
-- 标记管理：设置书架状态、0～10 评分、短评、标签、可见性和联邦宇宙同步选项，支持修改与删除。
+- 标记管理：设置书架状态、0～10 评分、短评、标签、可见性和联邦宇宙同步选项，支持标签建议、指定标记日期、修改与删除。
 - 我的书架：按状态、类目或标签分页查看标记，支持标题过滤与日历视图。
-- 收藏单：查看自己的收藏单及条目，当前为只读，不支持创建或编辑。
+- 收藏单：查看自己创建或收藏的收藏单及条目，当前为只读，不支持创建或编辑。
 - 我的主页：展示资料、书架统计、最近完成条目和收藏单入口；设置通过弹窗承载。
 - 主题与语言：多套配色主题以及简体中文、繁體中文、English 应用内切换。
 - 应用更新：启动静默检查和手动检查，支持多源下载、APK 版本与签名校验、系统安装器。
@@ -145,6 +146,9 @@ Linux/macOS/CI 对应使用 `./gradlew`。
 - 提交的 `rating_grade` 为 0～10 整数；0 表示未评分，提交时省略该字段。
 - 书架状态的显示动词会随不同类目变化，不要把某一类目的文字硬编码为通用状态名。
 - 标记修改后通过现有事件和状态流同步页面，不在页面之间另建临时全局状态。
+- **书架列表排序**：书架页面的条目排序遵循 NeoDB 服务器返回的顺序。修改标记后，`ShelfViewModel.saveMark()` 会调用 `reload()` 重新拉取数据；条目的最终位置由实例返回结果决定，包括指定历史标记日期的情况。客户端不做额外排序或位置保持，也不保证刚修改的条目一定排在最前面。
+- **标签输入与建议**：标签输入框使用 `TextFieldValue` 管理文本和光标位置。点击标签建议时替换光标所在的标签片段并去重，自动在末尾添加空格并将光标定位到末尾，方便用户连续输入多个标签。标签建议框仅在输入框获得焦点时显示。
+- **指定标记日期**：编辑器默认关闭指定日期，不主动指定时省略 `created_time`，由服务端保留原时间或记录状态变更时间。指定日期须通过严格的 `YYYY-MM-DD` 校验，并提交完整 UTC 时间戳，与书架和日历直接取时间戳日期部分的口径一致；日期格式化与校验须兼容 API 24。
 
 ### 更新、版本与签名
 
@@ -165,13 +169,14 @@ Linux/macOS/CI 对应使用 `./gradlew`。
 
 ## CI 与发布
 
-以 `.github/workflows/ci.yml` 和 `.github/workflows/build-apk.yml` 的当前内容为准。本节只说明流程语义，不为未来 Action 或依赖升级制定路线。
+以 `.github/workflows/` 中各工作流的当前内容为准。本节只说明流程语义，不为未来 Action 或依赖升级制定路线。
 
 - `ci.yml`：push 到 `main` 和 pull request 时执行 `compileDebugKotlin` 与 `testDebugUnitTest`。
-- `build-apk.yml`：通过 `workflow_dispatch` 或 Release 发布触发，先运行 release 单测，再构建并校验签名 APK。
+- `release.yml`：`main` 上的 `.github/release-version` 变更或手动运行时，读取其中的 `v主版本.次版本.修订版本`，创建标签和 Release、生成发布说明，再显式触发 `build-apk.yml`；值为 `unreleased` 时跳过发布。
+- `build-apk.yml`：通过 `workflow_dispatch` 或 Release 发布触发，先运行 release 单测，再构建并校验签名 APK。自动发布通过 `release_tag` 指定要构建的标签；没有指定标签的纯手动构建使用 Gradle 默认版本。
 - Release 构建要求完整的正式签名 secrets；签名材料不存在于仓库中。
 - Release 最终附件名为 `NeoDB-Lite.apk`。
-- 两条工作流都通过 `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` 使用 Node 24；普通维护中不要删除或降级该兼容约束。
+- `ci.yml` 和 `build-apk.yml` 通过 `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` 使用 Node 24；普通维护中不要删除或降级该兼容约束。
 - 当前工作流使用的 Action 版本以文件本身为准，不在普通维护任务中主动升级或降级。
 
 ## 修改原则

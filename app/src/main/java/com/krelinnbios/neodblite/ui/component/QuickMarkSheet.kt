@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -51,13 +52,20 @@ fun QuickMarkSheet(item: ItemBrief, onDismiss: () -> Unit) {
 
     var mark by remember(uuid) { mutableStateOf<MarkSchema?>(null) }
     var loaded by remember(uuid) { mutableStateOf(false) }
+    var saving by remember(uuid) { mutableStateOf(false) }
     LaunchedEffect(uuid) {
         repo.mark(uuid).onSuccess { mark = it }
         loaded = true
     }
 
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { it != SheetValue.Hidden || !saving }
+    )
+    ModalBottomSheet(
+        onDismissRequest = { if (!saving) onDismiss() },
+        sheetState = sheetState
+    ) {
         Text(
             text = item.bestTitle,
             style = MaterialTheme.typography.titleSmall,
@@ -78,41 +86,54 @@ fun QuickMarkSheet(item: ItemBrief, onDismiss: () -> Unit) {
                         comment = it.commentText.orEmpty(),
                         visibility = Visibility.fromApi(it.visibility),
                         tags = it.tags,
-                        shareToFediverse = false
+                        shareToFediverse = false,
+                        createdTime = it.createdTime
                     )
                 },
                 hasExisting = mark != null,
+                saving = saving,
                 onSave = { draft ->
+                    saving = true
                     scope.launch {
-                        repo.postMark(
-                            uuid,
-                            MarkInRequest(
-                                shelfType = draft.shelf.apiValue,
-                                visibility = draft.visibility.apiValue,
-                                commentText = draft.comment.ifBlank { null },
-                                ratingGrade = draft.grade.takeIf { it > 0 },
-                                tags = draft.tags,
-                                postToFediverse = draft.shareToFediverse
+                        try {
+                            repo.postMark(
+                                uuid,
+                                MarkInRequest(
+                                    shelfType = draft.shelf.apiValue,
+                                    visibility = draft.visibility.apiValue,
+                                    commentText = draft.comment.ifBlank { null },
+                                    ratingGrade = draft.grade.takeIf { it > 0 },
+                                    tags = draft.tags,
+                                    postToFediverse = draft.shareToFediverse,
+                                    createdTime = draft.createdTime
+                                )
                             )
-                        )
-                            .onSuccess {
-                                AppToast.show(strings.saved)
-                                MarkEventBus.markDirty()
-                            }
-                            .onFailure { AppToast.show(it.friendlyMessage()) }
+                                .onSuccess {
+                                    AppToast.show(strings.saved)
+                                    MarkEventBus.markDirty()
+                                    onDismiss()
+                                }
+                                .onFailure { AppToast.show(it.friendlyMessage()) }
+                        } finally {
+                            saving = false
+                        }
                     }
-                    onDismiss()
                 },
                 onDelete = {
+                    saving = true
                     scope.launch {
-                        repo.deleteMark(uuid)
-                            .onSuccess {
-                                AppToast.show(strings.markDeleted)
-                                MarkEventBus.markDirty()
-                            }
-                            .onFailure { AppToast.show(it.friendlyMessage()) }
+                        try {
+                            repo.deleteMark(uuid)
+                                .onSuccess {
+                                    AppToast.show(strings.markDeleted)
+                                    MarkEventBus.markDirty()
+                                    onDismiss()
+                                }
+                                .onFailure { AppToast.show(it.friendlyMessage()) }
+                        } finally {
+                            saving = false
+                        }
                     }
-                    onDismiss()
                 }
             )
         }

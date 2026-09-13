@@ -76,7 +76,7 @@ data class MarkDraft(
     val createdTime: String? = null
 )
 
-private val markTagSeparators = Regex("""[\s,，、]+""")
+private val markTagSeparators = Regex(" +")
 
 fun parseMarkTags(text: String): List<String> =
     text.split(markTagSeparators)
@@ -103,6 +103,8 @@ internal fun completeMarkTag(value: TextFieldValue, tag: String): TextFieldValue
     val text = tags.joinToString(" ", postfix = " ")
     return TextFieldValue(text, selection = TextRange(text.length))
 }
+
+internal fun hasInvalidMarkTagInput(text: String): Boolean = text.any { it == ',' || it == '，' || it == '、' }
 
 internal fun currentMarkDate(now: Date = Date()): String =
     SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(now)
@@ -309,6 +311,10 @@ fun MarkEditor(
             value = tagsTextValue,
             onValueChange = { tagsTextValue = it },
             label = { Text(strings.tagsOptional) },
+            isError = hasInvalidMarkTagInput(tagsTextValue.text),
+            supportingText = if (hasInvalidMarkTagInput(tagsTextValue.text)) {
+                { Text(strings.invalidTagInput) }
+            } else null,
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
@@ -409,6 +415,7 @@ fun MarkEditor(
             enabled = !saving,
             onClick = {
                 val createdTime = if (specifyDate) markDateToCreatedTime(formatMarkDateInput(selectedDate.text)) else null
+                if (hasInvalidMarkTagInput(tagsTextValue.text)) return@Button
                 if (specifyDate && (createdTime == null || markDateInputHasWarning(selectedDate.text))) {
                     dateError = true
                     return@Button

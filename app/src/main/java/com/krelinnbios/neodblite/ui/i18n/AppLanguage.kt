@@ -179,6 +179,7 @@ data class AppStrings(
     val specifyMarkDate: String,
     val markDate: String,
     val invalidMarkDate: String
+    , val invalidTagInput: String
 ) {
     fun categoryLabel(category: Category?): String {
         val c = category ?: return ""
@@ -373,7 +374,7 @@ val ZH_HANS = AppStrings(
     unrated = "未评分",
     visibility = "可见性",
     shortCommentOptional = "短评（可选）",
-    tagsOptional = "标签（空格或逗号分隔，可选）",
+    tagsOptional = "标签（仅空格分隔）",
     syncToFediverse = "同步到联邦宇宙",
     saveMark = "保存标记",
     deleteMark = "删除标记",
@@ -443,6 +444,7 @@ val ZH_HANS = AppStrings(
     specifyMarkDate = "指定标记日期",
     markDate = "标记日期",
     invalidMarkDate = "请输入有效日期（YYYY-MM-DD）"
+    , invalidTagInput = "标签不能包含逗号、中文逗号或顿号"
 )
 
 val ZH_HANT = ZH_HANS.copy(
@@ -487,7 +489,7 @@ val ZH_HANT = ZH_HANS.copy(
     unrated = "未評分",
     visibility = "可見性",
     shortCommentOptional = "短評（可選）",
-    tagsOptional = "標籤（空格或逗號分隔，可選）",
+    tagsOptional = "標籤（僅空格分隔）",
     syncToFediverse = "同步到聯邦宇宙",
     saveMark = "儲存標記",
     deleteMark = "刪除標記",
@@ -556,6 +558,7 @@ val ZH_HANT = ZH_HANS.copy(
     specifyMarkDate = "指定標記日期",
     markDate = "標記日期",
     invalidMarkDate = "請輸入有效日期（YYYY-MM-DD）"
+    , invalidTagInput = "標籤不能包含逗號、中文逗號或頓號"
 )
 
 val EN = ZH_HANS.copy(
@@ -600,7 +603,7 @@ val EN = ZH_HANS.copy(
     unrated = "Unrated",
     visibility = "Visibility",
     shortCommentOptional = "Short comment (optional)",
-    tagsOptional = "Tags (space or comma separated, optional)",
+    tagsOptional = "Tags (spaces only)",
     syncToFediverse = "Post to Fediverse",
     saveMark = "Save mark",
     deleteMark = "Delete mark",
@@ -670,6 +673,7 @@ val EN = ZH_HANS.copy(
     specifyMarkDate = "Specify mark date",
     markDate = "Mark date",
     invalidMarkDate = "Enter a valid date (YYYY-MM-DD)"
+    , invalidTagInput = "Tags cannot contain commas or ideographic commas"
 )
 
 fun appStringsFor(language: AppLanguage): AppStrings = when (AppLanguage.resolve(language)) {

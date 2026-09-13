@@ -40,12 +40,27 @@ class MarkEditorTest {
 
     @Test
     fun tagSuggestionAppendsAfterSeparators() {
-        listOf("", "read ", "read,", "read，", "read、").forEach { text ->
+        listOf("", "read ", "read  ").forEach { text ->
             val result = completeMarkTag(input(text), "science")
             val expected = if (text.isEmpty()) "science " else "read science "
             assertEquals(expected, result.text)
             assertEquals(TextRange(result.text.length), result.selection)
         }
+    }
+
+    @Test
+    fun tagParsingOnlyUsesWhitespaceAsSeparator() {
+        assertEquals(listOf("read,science", "已读，科幻、漫画\t标签"), parseMarkTags("read,science 已读，科幻、漫画\t标签"))
+        assertEquals("read,sci", markTagQuery(input("read,sci")))
+        assertEquals("science ", completeMarkTag(input("read,sci"), "science").text)
+        assertEquals("标签\t片段", markTagQuery(input("标签\t片段")))
+    }
+
+    @Test
+    fun tagInputRejectsCommaCharacters() {
+        assertTrue(hasInvalidMarkTagInput("read,science"))
+        assertTrue(hasInvalidMarkTagInput("已读，科幻、漫画"))
+        assertFalse(hasInvalidMarkTagInput("已读  科幻"))
     }
 
     @Test

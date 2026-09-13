@@ -308,6 +308,7 @@ fun MarkEditor(
         )
 
         Spacer(Modifier.height(12.dp))
+        val hasTagWarning = hasInvalidMarkTagInput(tagsTextValue.text)
         OutlinedTextField(
             value = tagsTextValue,
             onValueChange = {
@@ -315,8 +316,8 @@ fun MarkEditor(
                 tagError = false
             },
             label = { Text(strings.tagsOptional) },
-            isError = tagError,
-            supportingText = if (tagError) {
+            isError = hasTagWarning,
+            supportingText = if (hasTagWarning) {
                 { Text(strings.invalidTagInput) }
             } else null,
             singleLine = true,

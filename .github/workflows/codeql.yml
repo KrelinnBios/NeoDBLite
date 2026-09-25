@@ -1,0 +1,77 @@
+name: CodeQL
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    # 每周一 UTC 05:17 跑一次，避免整点排队。
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+# 与 ci.yml、build-apk.yml 保持一致：所有 JavaScript actions 固定跑在 Node 24 上。
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ "java-kotlin" ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      # Android 工程无法用 CodeQL 自带的 autobuild.sh（它不认 Gradle wrapper，
+      # 也没有 Android SDK），所以固定 manual 模式并显式给出 Gradle 构建步骤。
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: manual
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          # 有了密钥才能把 Gradle 配置缓存跨 run 持久化（缓存里含敏感信息，必须加密存储）。
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platforms;android-34 build-tools;34.0.0"
+          cache: false
+
+      - name: Grant Gradle wrapper permission
+        run: chmod +x ./gradlew
+
+      # CodeQL 的 Java/Kotlin 提取器靠 javac/kotlinc 产出字节码，编译本身必须成功。
+      # debug 变体即可覆盖全部源码，不需要 assembleRelease，也不依赖签名材料。
+      - name: Build with Gradle
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

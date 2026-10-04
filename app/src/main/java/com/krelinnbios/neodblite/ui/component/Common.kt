@@ -164,12 +164,14 @@ fun ItemGridCard(
 /**
  * 书架行：封面 + 标题，然后依次是「我的评分（星）」「我写的短评」，最底为全站评分（数字/10）。
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MarkRow(
     mark: MarkSchema,
     onClick: () -> Unit,
     onEdit: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null
 ) {
     val item = mark.item ?: return
     val strings = LocalAppStrings.current
@@ -177,11 +179,15 @@ fun MarkRow(
     val myComment = mark.commentText?.takeIf { it.isNotBlank() }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
+        val rowModifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp)
+        Row(
+            modifier = if (onLongClick != null) {
+                rowModifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            } else {
+                rowModifier.clickable(onClick = onClick)
+            }
         ) {
         CoverImage(
             url = item.coverImageUrl,

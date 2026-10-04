@@ -29,7 +29,7 @@ NeoDB Lite is an unofficial Android client for [NeoDB](https://neodb.social) and
 
 - Instance login: enter a NeoDB instance and authorize through the browser.
 - Discover feed: browse trending media by category and long-press items for quick marking.
-- Item search: search across or within categories and keep recent queries.
+- Item search: search across or within categories, keep recent queries, and show your marks and ratings in result rows.
 - Item details: view covers, descriptions, tags, external links, ratings, and community posts.
 - Item marking: set shelf status, rating, note, tags, and visibility, with space-separated tags, tag suggestions, and an optional mark date that formats separators and flags invalid or future dates.
 - My shelf: filter marks by status, category, tag, or keyword, with editing, deletion, and calendar views.

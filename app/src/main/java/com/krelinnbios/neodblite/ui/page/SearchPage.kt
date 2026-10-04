@@ -48,16 +48,19 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.krelinnbios.neodblite.data.model.Category
 import com.krelinnbios.neodblite.data.model.ItemBrief
+import com.krelinnbios.neodblite.data.model.MarkSchema
 import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.component.EmptyBox
 import com.krelinnbios.neodblite.ui.component.ErrorBox
-import com.krelinnbios.neodblite.ui.component.ItemRow
 import com.krelinnbios.neodblite.ui.component.LoadingBox
+import com.krelinnbios.neodblite.ui.component.MarkRow
 import com.krelinnbios.neodblite.ui.component.QuickMarkSheet
 import com.krelinnbios.neodblite.ui.i18n.LocalAppStrings
 import com.krelinnbios.neodblite.ui.vm.SearchViewModel
@@ -228,9 +231,20 @@ private fun SearchField(
                     .height(26.dp)
                     .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.45f))
             )
+            // 用 TextFieldValue 管理光标：外部直接改关键词时（如点历史记录），光标落到内容末尾；
+            // 用户正常输入时不重置光标。
+            var textValue by remember { mutableStateOf(TextFieldValue(query, TextRange(query.length))) }
+            LaunchedEffect(query) {
+                if (query != textValue.text) {
+                    textValue = TextFieldValue(query, TextRange(query.length))
+                }
+            }
             BasicTextField(
-                value = query,
-                onValueChange = onQueryChange,
+                value = textValue,
+                onValueChange = {
+                    textValue = it
+                    if (it.text != query) onQueryChange(it.text)
+                },
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
@@ -362,7 +376,7 @@ private fun SearchCategoryItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SearchResultContent(
-    state: UiState<List<ItemBrief>>?,
+    state: UiState<List<MarkSchema>>?,
     refreshing: Boolean,
     loadingMore: Boolean,
     onRefresh: () -> Unit,
@@ -400,12 +414,15 @@ private fun SearchResultContent(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-                            items(results) { item ->
-                                ItemRow(
-                                    item = item,
-                                    onClick = { onOpenItem(item) },
-                                    onLongClick = { onQuickMark(item) }
-                                )
+                            items(results) { mark ->
+                                val item = mark.item
+                                if (item != null) {
+                                    MarkRow(
+                                        mark = mark,
+                                        onClick = { onOpenItem(item) },
+                                        onLongClick = { onQuickMark(item) }
+                                    )
+                                }
                             }
                             if (loadingMore) {
                                 item {

@@ -24,6 +24,9 @@ data class TagItem(
     @SerializedName("item") val item: ItemBrief? = null
 )
 
+internal val TagItem.category: Category?
+    get() = item?.let { Category.fromApi(it.category ?: it.type) }
+
 data class PagedTagItems(
     val data: List<TagItem> = emptyList(),
     val pages: Int = 0,

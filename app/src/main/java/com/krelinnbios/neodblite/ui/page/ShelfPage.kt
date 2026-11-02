@@ -36,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -78,6 +79,7 @@ import com.krelinnbios.neodblite.ui.vm.TagItemsViewModel
 @Composable
 fun ShelfPage(
     shelfVM: ShelfViewModel,
+    profileUrl: String?,
     onOpenItem: (ItemBrief) -> Unit
 ) {
     val strings = LocalAppStrings.current
@@ -93,9 +95,6 @@ fun ShelfPage(
     val tagLoadingAll by tagItemsVM.loadingAll.collectAsState()
     val toast by shelfVM.toast.collectAsState()
     val userTags by shelfVM.userTags.collectAsState()
-    val tagsLoadFailed by shelfVM.tagsLoadFailed.collectAsState()
-    val tagCounts by shelfVM.tagCounts.collectAsState()
-    val tagCategories by shelfVM.tagCategories.collectAsState()
     val categoryCounts by shelfVM.categoryCounts.collectAsState()
     val allCategoryCount = categoryCounts.takeIf { it.size == Category.entries.size }?.values?.sum()
 
@@ -107,14 +106,20 @@ fun ShelfPage(
     var searchQuery by remember(shelfType, category, selectedTag) { mutableStateOf(TextFieldValue("")) }
     var editingMark by remember { mutableStateOf<MarkSchema?>(null) }
 
+    DisposableEffect(shelfVM) {
+        onDispose {
+            shelfVM.closeTagMenu()
+            shelfVM.invalidateTagCounts()
+        }
+    }
     LaunchedEffect(toast) {
         toast?.let {
             AppToast.show(it)
             shelfVM.consumeToast()
         }
     }
-    LaunchedEffect(selectedTag) {
-        selectedTag?.uuid?.let { tagItemsVM.loadOnce(it) }
+    LaunchedEffect(selectedTag, category) {
+        selectedTag?.uuid?.let { tagItemsVM.loadOnce(it, category) }
     }
 
     val shelves = ShelfType.entries
@@ -187,8 +192,13 @@ fun ShelfPage(
                 contentAlignment = Alignment.Center
             ) {
                 var tagsExpanded by remember { mutableStateOf(false) }
-                // 打开下拉时顺带重新拉取，避免启动时一次静默失败导致列表一直为空。
-                IconButton(onClick = { shelfVM.loadTags(); tagsExpanded = true }) {
+                if (tagsExpanded) {
+                    DisposableEffect(shelfVM, category, profileUrl) {
+                        shelfVM.loadTags(profileUrl)
+                        onDispose { shelfVM.closeTagMenu() }
+                    }
+                }
+                IconButton(onClick = { tagsExpanded = true }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Label,
                         contentDescription = null,
@@ -207,29 +217,24 @@ fun ShelfPage(
                         else MaterialTheme.colorScheme.onSurface,
                         onClick = { selectedTag = null; tagsExpanded = false }
                     )
-                    // 选中类目时只展示该标签涉及当前类目、与本页筛选口径一致的标签。
-                    val visibleTags = if (category == null) {
-                        userTags
-                    } else {
-                        userTags.filter { tagCategories[it.uuid]?.contains(category) == true }
-                    }
-                    if (visibleTags.isEmpty()) {
+                    userTags.tags.forEach { tag ->
                         CompactMenuItem(
-                            label = if (tagsLoadFailed) strings.networkError else strings.noContent,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall,
-                            onClick = {
-                                if (tagsLoadFailed) shelfVM.loadTags() else tagsExpanded = false
-                            }
-                        )
-                    }
-                    visibleTags.forEach { tag ->
-                        CompactMenuItem(
-                            // API 标签列表不返回 item_count，数量来自 tagCounts（逐标签查询）；itemCount 仅作兜底。
-                            label = menuLabel(tag.bestTitle, tagCounts[tag.uuid] ?: tag.itemCount),
+                            label = menuLabel(tag.bestTitle, tag.itemCount),
                             color = if (tag.uuid == selectedTag?.uuid) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.onSurface,
                             onClick = { selectedTag = tag; tagsExpanded = false }
+                        )
+                    }
+                    if (userTags.loading || userTags.failed || userTags.tags.isEmpty()) {
+                        CompactMenuItem(
+                            label = when {
+                                userTags.loading -> strings.loading
+                                userTags.failed -> strings.networkError
+                                else -> strings.noContent
+                            },
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                            onClick = { if (userTags.failed && !userTags.loading) shelfVM.loadTags(profileUrl) }
                         )
                     }
                 }
@@ -405,7 +410,6 @@ fun ShelfPage(
                     ),
                     hasExisting = true,
                     onSave = { draft ->
-                        val selectedTagUuid = selectedTag?.uuid
                         shelfVM.saveMark(
                             uuid,
                             MarkInRequest(
@@ -417,15 +421,14 @@ fun ShelfPage(
                                 postToFediverse = draft.shareToFediverse,
                                 createdTime = draft.createdTime
                             ),
-                            onSuccess = { selectedTagUuid?.let(tagItemsVM::load) }
+                            onSuccess = { if (selectedTag != null) tagItemsVM.reload() }
                         )
                         editingMark = null
                     },
                     onDelete = {
-                        val selectedTagUuid = selectedTag?.uuid
                         shelfVM.deleteMark(
                             uuid,
-                            onSuccess = { selectedTagUuid?.let(tagItemsVM::load) }
+                            onSuccess = { if (selectedTag != null) tagItemsVM.reload() }
                         )
                         editingMark = null
                     }
@@ -453,7 +456,7 @@ private fun TagItemsContent(
 
     when (val s = state) {
         is UiState.Loading -> LoadingBox()
-        is UiState.Error -> ErrorBox(s.message)
+        is UiState.Error -> ErrorBox(s.message, onRetry = tagItemsVM::reload)
         is UiState.Success -> {
             val displayed = if (query.isNotBlank()) {
                 s.data.filter { it.item?.bestTitle?.contains(query, ignoreCase = true) == true }
@@ -470,7 +473,7 @@ private fun TagItemsContent(
                         total > 0 && last >= total - 3
                     }
                 }
-                LaunchedEffect(shouldLoadMore) {
+                LaunchedEffect(shouldLoadMore, displayed.size, query) {
                     if (shouldLoadMore && query.isBlank()) tagItemsVM.loadMore()
                 }
                 LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {

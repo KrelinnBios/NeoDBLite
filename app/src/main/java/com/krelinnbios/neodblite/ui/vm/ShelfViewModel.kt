@@ -2,23 +2,29 @@ package com.krelinnbios.neodblite.ui.vm
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.krelinnbios.neodblite.data.model.category
 import com.krelinnbios.neodblite.data.model.Category
 import com.krelinnbios.neodblite.data.model.MarkInRequest
 import com.krelinnbios.neodblite.data.model.MarkSchema
+import com.krelinnbios.neodblite.data.model.PagedTagItems
 import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.data.model.Tag
-import com.krelinnbios.neodblite.data.model.TagItem
 import com.krelinnbios.neodblite.global.App
 import com.krelinnbios.neodblite.global.MarkEventBus
-import com.krelinnbios.neodblite.ui.UiState
 import com.krelinnbios.neodblite.ui.friendlyMessage
-import kotlinx.coroutines.Job
+import com.krelinnbios.neodblite.ui.UiState
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
 class ShelfViewModel : ViewModel() {
     private val repo = App.container.repository
@@ -55,77 +61,112 @@ class ShelfViewModel : ViewModel() {
     private val _toast = MutableStateFlow<String?>(null)
     val toast: StateFlow<String?> = _toast.asStateFlow()
 
-    private val _userTags = MutableStateFlow<List<Tag>>(emptyList())
-    val userTags: StateFlow<List<Tag>> = _userTags.asStateFlow()
+    data class TagMenuState(val tags: List<Tag> = emptyList(), val loading: Boolean = true, val failed: Boolean = false)
 
-    private val _tagsLoadFailed = MutableStateFlow(false)
-    val tagsLoadFailed: StateFlow<Boolean> = _tagsLoadFailed.asStateFlow()
+    private val _userTags = MutableStateFlow(TagMenuState())
+    private var tagProfileUrl: String? = null
+    val userTags = _userTags.asStateFlow()
 
     private val _categoryCounts = MutableStateFlow<Map<Category, Int>>(emptyMap())
     val categoryCounts: StateFlow<Map<Category, Int>> = _categoryCounts.asStateFlow()
 
-    /** 各标签下的条目总数（key 为标签 uuid）。标签列表接口不含数量，需逐个取条目接口第一页的 count。 */
-    private val _tagCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
-    val tagCounts: StateFlow<Map<String, Int>> = _tagCounts.asStateFlow()
-
-    /** 各标签涉及的类目（key 为标签 uuid）。标签接口本身不含类目，由条目接口第一页的 item.category 推导，用于按当前类目过滤标签列表。 */
-    private val _tagCategories = MutableStateFlow<Map<String, Set<Category>>>(emptyMap())
-    val tagCategories: StateFlow<Map<String, Set<Category>>> = _tagCategories.asStateFlow()
-
-    private var loadingTags = false
+    private var tagsJob: Job? = null
+    private val tagCategoryCounts = mutableMapOf<String, Map<Category, Int>>()
 
     init {
         reload()
         loadCategoryCounts()
-        loadTags()
     }
 
-    /** 拉取当前账号的全部标签（用于标签筛选下拉）。失败时保留旧列表并置失败标记，供下拉提示与重试。 */
-    fun loadTags() {
-        if (loadingTags) return
-        loadingTags = true
-        viewModelScope.launch {
-            val all = mutableListOf<Tag>()
-            var p = 1
-            var failed = false
-            while (p <= 20) {
-                val result = repo.myTags(p).getOrNull()
-                if (result == null) {
-                    failed = true
-                    break
+    fun closeTagMenu() {
+        tagsJob?.cancel()
+        tagsJob = null
+        tagProfileUrl = null
+    }
+
+    fun invalidateTagCounts() {
+        tagCategoryCounts.clear()
+        if (tagsJob != null) loadTags()
+    }
+
+    fun loadTags(profileUrl: String? = tagProfileUrl) {
+        tagsJob?.cancel()
+        tagProfileUrl = profileUrl
+        val category = _category.value
+        _userTags.value = TagMenuState()
+        tagsJob = viewModelScope.launch {
+            try {
+                val pageCounts = async {
+                    profileUrl?.let {
+                        withTimeoutOrNull(12_000) { repo.tagPageCounts(it, category).getOrNull() }
+                    }
                 }
-                all.addAll(result.data)
-                if (result.data.isEmpty() || p >= result.pages) break
-                p++
-            }
-            if (!failed) {
-                val tags = all.filter { !it.uuid.isNullOrBlank() && it.bestTitle.isNotBlank() }
+                val tags = mutableListOf<Tag>()
+                var page = 1
+                do {
+                    val result = repo.myTags(page).getOrThrow()
+                    tags.addAll(result.data)
+                    page++
+                } while (page <= result.pages)
+
+                val sorted = tags.filter { !it.uuid.isNullOrBlank() && it.bestTitle.isNotBlank() }
                     .sortedBy { it.bestTitle }
-                _userTags.value = tags
-                loadTagCounts(tags)
+                if (category == null) _userTags.value = TagMenuState(sorted)
+                val counts = pageCounts.await()
+                val visible = mutableMapOf<String, Tag>()
+                val pending = mutableListOf<Tag>()
+                for (tag in sorted) {
+                    val count = counts?.get(tag.bestTitle)
+                    if (count != null) {
+                        visible[tag.bestTitle] = tag.copy(itemCount = count)
+                    } else if (counts == null || tag.visibility != 0 || category == null) {
+                        pending.add(tag)
+                        if (category == null) visible[tag.bestTitle] = tag
+                    }
+                }
+
+                var failed = false
+                fun publish(loading: Boolean) {
+                    _userTags.value = TagMenuState(sorted.mapNotNull { visible[it.bestTitle] }, loading, failed)
+                }
+                publish(pending.isNotEmpty())
+                // 网页已返回的标签立即可点。私密标签或不支持分类页的实例，逐个补齐并展示。
+                val limit = Semaphore(4)
+                coroutineScope {
+                    pending.forEach { tag ->
+                        launch {
+                            limit.withPermit {
+                                try {
+                                    tagWithCount(tag, category)?.let { visible[tag.bestTitle] = it }
+                                } catch (e: CancellationException) {
+                                    throw e
+                                } catch (e: Exception) {
+                                    failed = true
+                                }
+                                publish(true)
+                            }
+                        }
+                    }
+                }
+                publish(false)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _userTags.value = _userTags.value.copy(loading = false, failed = true)
             }
-            _tagsLoadFailed.value = failed
-            loadingTags = false
         }
     }
 
-    /** 并发拉取各标签的条目总数（每个标签取条目接口第一页的 count），同时用该页条目推导标签涉及的类目。 */
-    private fun loadTagCounts(tags: List<Tag>) {
-        viewModelScope.launch {
-            val responses = tags.mapNotNull { it.uuid }
-                .map { uuid ->
-                    async { uuid to repo.tagItems(uuid, 1).getOrNull() }
-                }
-                .awaitAll()
-            val counts = responses
-                .mapNotNull { (uuid, response) -> response?.let { uuid to it.count } }
-                .toMap()
-            val categories = responses
-                .mapNotNull { (uuid, response) -> response?.let { uuid to tagCategoriesOf(it.data) } }
-                .toMap()
-            _tagCounts.value = counts
-            _tagCategories.value = categories
+    private suspend fun tagWithCount(tag: Tag, category: Category?): Tag? {
+        val uuid = requireNotNull(tag.uuid)
+        if (category == null) {
+            val count = repo.tagItems(uuid, 1).getOrNull()?.count ?: tag.itemCount
+            return tag.copy(itemCount = count)
         }
+        val counts = tagCategoryCounts[uuid] ?: countTagCategories { page ->
+            repo.tagItems(uuid, page).getOrThrow()
+        }.also { tagCategoryCounts[uuid] = it }
+        return counts[category]?.let { tag.copy(itemCount = it) }
     }
 
     private fun loadCategoryCounts() {
@@ -148,7 +189,7 @@ class ShelfViewModel : ViewModel() {
         extendJob?.cancel()
         _loadingMore.value = false
         _loadingAll.value = false
-        loadTags()
+        invalidateTagCounts()
         loadCategoryCounts()
         viewModelScope.launch {
             repo.shelf(_shelfType.value, _category.value, 1)
@@ -259,7 +300,7 @@ class ShelfViewModel : ViewModel() {
                 .onSuccess {
                     _toast.value = "已保存"
                     reload()
-                    loadTags()
+                    invalidateTagCounts()
                     loadCategoryCounts()
                     MarkEventBus.markDirty()
                     onSuccess?.invoke()
@@ -275,7 +316,7 @@ class ShelfViewModel : ViewModel() {
                 .onSuccess {
                     _toast.value = "已删除标记"
                     reload()
-                    loadTags()
+                    invalidateTagCounts()
                     loadCategoryCounts()
                     MarkEventBus.markDirty()
                     onSuccess?.invoke()
@@ -291,6 +332,17 @@ class ShelfViewModel : ViewModel() {
     val canLoadMore: Boolean get() = page < pages
 }
 
-/** 从标签条目页推导该标签涉及的类目集合；条目无类目信息时忽略。 */
-internal fun tagCategoriesOf(items: List<TagItem>): Set<Category> =
-    items.mapNotNull { it.item?.let { item -> Category.fromApi(item.category ?: item.type) } }.toSet()
+/** 只保存各类型的数量，整页条目用完即可释放。 */
+internal suspend fun countTagCategories(loadPage: suspend (Int) -> PagedTagItems): Map<Category, Int> {
+    val counts = mutableMapOf<Category, Int>()
+    var page = 1
+    do {
+        val result = loadPage(page)
+        for (member in result.data) {
+            val category = member.category ?: continue
+            counts[category] = counts.getOrDefault(category, 0) + 1
+        }
+        page++
+    } while (page <= result.pages)
+    return counts
+}

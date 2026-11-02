@@ -20,6 +20,8 @@ import kotlinx.coroutines.withContext
 import com.krelinnbios.neodblite.util.CommunityHtmlParser
 import com.krelinnbios.neodblite.util.ProfileHtmlParser
 import com.krelinnbios.neodblite.util.profileWebUrl
+import com.krelinnbios.neodblite.util.TagHtmlParser
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.io.IOException
 
 /** 业务数据仓库：包装 [NeoDBApi]，统一在 IO 线程执行并返回 Result。 */
@@ -50,6 +52,19 @@ class NeoDBRepository(private val client: NeoDBClient) {
 
     suspend fun collectionItems(uuid: String, page: Int): Result<PagedCollectionItems> =
         io { api.collectionItems(uuid, page) }
+
+    suspend fun tagPageCounts(profileUrl: String, category: Category?): Result<Map<String, Int>?> = io {
+        val profile = profileUrl.toHttpUrlOrNull() ?: return@io null
+        if (profile.pathSegments.filter { it.isNotEmpty() }.size != 2 ||
+            profile.pathSegments.first() != "users") return@io null
+        val path = profile.encodedPath.trimEnd('/') + "/tags/"
+        val page = profile.newBuilder().encodedPath(path).query(null).apply {
+            if (category != null) addQueryParameter("category", category.apiValue)
+        }.build()
+        // 仅将相对实例的路径交给带令牌的客户端。
+        val requestPath = page.encodedPath + (page.encodedQuery?.let { "?$it" } ?: "")
+        TagHtmlParser.counts(api.htmlPage(requestPath).use { it.string() }, page, category)
+    }
 
     suspend fun myTags(page: Int): Result<PagedTags> = io { api.myTags(page) }
 

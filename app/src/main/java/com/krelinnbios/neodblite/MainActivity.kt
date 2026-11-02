@@ -70,6 +70,7 @@ import com.krelinnbios.neodblite.ui.vm.DetailViewModel
 import com.krelinnbios.neodblite.ui.vm.DiscoverViewModel
 import com.krelinnbios.neodblite.ui.vm.ProfileViewModel
 import com.krelinnbios.neodblite.ui.vm.SearchViewModel
+import com.krelinnbios.neodblite.util.profileWebUrl
 import com.krelinnbios.neodblite.ui.vm.ShelfViewModel
 import com.krelinnbios.neodblite.util.AppUpdateCheckResult
 import com.krelinnbios.neodblite.util.AppUpdateInfo
@@ -291,7 +292,7 @@ private fun MainScaffold(
                 )
             }
             composable("shelf") {
-                ShelfPage(shelfVM = shelfVM, onOpenItem = openItem)
+                ShelfPage(shelfVM, profileWebUrl(userName, authVM.currentHost), onOpenItem = openItem)
             }
             composable("profile") {
                 ProfilePage(

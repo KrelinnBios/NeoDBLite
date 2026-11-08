@@ -15,6 +15,7 @@ import com.krelinnbios.neodblite.data.model.NeoUser
 import com.krelinnbios.neodblite.data.model.PagedMarks
 import com.krelinnbios.neodblite.data.model.SearchResult
 import com.krelinnbios.neodblite.data.model.ShelfType
+import com.krelinnbios.neodblite.data.model.filterByShelf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.krelinnbios.neodblite.util.CommunityHtmlParser
@@ -102,7 +103,10 @@ class NeoDBRepository(private val client: NeoDBClient) {
     }
 
     suspend fun shelf(type: ShelfType, category: Category?, page: Int): Result<PagedMarks> =
-        io { api.shelf(type.apiValue, category?.apiValue, page) }
+        io {
+            api.shelf(type.apiValue, category?.apiValue, page)
+                .filterByShelf(type)
+        }
 
     /** 查询某条目的当前标记；未标记（404）返回 null。 */
     suspend fun mark(uuid: String): Result<MarkSchema?> = io {

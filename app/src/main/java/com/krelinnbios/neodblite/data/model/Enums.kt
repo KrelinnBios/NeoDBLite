@@ -13,9 +13,9 @@ enum class ShelfType(val apiValue: String) {
     }
 }
 
-/** 只保留与请求书架状态一致的标记，避免实例返回混合状态记录时串入其他列表。 */
+/** 剔除明确属于其他书架状态的标记；实例未返回状态时保留，避免误删整页数据。 */
 fun PagedMarks.filterByShelf(type: ShelfType): PagedMarks =
-    copy(data = data.filter { it.shelfType == type.apiValue })
+    copy(data = data.filter { it.shelfType == null || it.shelfType == type.apiValue })
 
 /** 可见性：0 公开 / 1 仅关注者 / 2 仅自己。 */
 enum class Visibility(val apiValue: Int, val label: String) {

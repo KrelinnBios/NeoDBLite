@@ -45,6 +45,9 @@ class ShelfViewModel : ViewModel() {
     /** 滚动加载/全量加载共用一个任务句柄：搜索时需能取消在途的滚动加载并由全量拉取接管。 */
     private var extendJob: Job? = null
 
+    /** 整页重载任务；切换页签或类目时取消，避免旧请求的结果覆盖当前列表。 */
+    private var reloadJob: Job? = null
+
     /** 基础列表被整体替换（如下拉刷新）时自增，供页面在搜索态重新触发全量拉取。 */
     private val _dataEpoch = MutableStateFlow(0)
     val dataEpoch: StateFlow<Int> = _dataEpoch.asStateFlow()
@@ -186,14 +189,19 @@ class ShelfViewModel : ViewModel() {
     fun refresh() {
         if (_refreshing.value) return
         _refreshing.value = true
+        reloadJob?.cancel()
         extendJob?.cancel()
         _loadingMore.value = false
         _loadingAll.value = false
         invalidateTagCounts()
         loadCategoryCounts()
+        val type = _shelfType.value
+        val category = _category.value
         viewModelScope.launch {
-            repo.shelf(_shelfType.value, _category.value, 1)
+            repo.shelf(type, category, 1)
                 .onSuccess {
+                    // 刷新在途时可能已切换页签/类目，旧结果不能覆盖当前列表。
+                    if (!matches(type, category)) return@onSuccess
                     page = 1
                     pages = it.pages
                     accumulated.clear()
@@ -201,10 +209,17 @@ class ShelfViewModel : ViewModel() {
                     _state.value = UiState.Success(accumulated.toList())
                     _dataEpoch.value += 1
                 }
-                .onFailure { if (_state.value !is UiState.Success) _state.value = UiState.Error(it.friendlyMessage()) }
+                .onFailure {
+                    if (matches(type, category) && _state.value !is UiState.Success) {
+                        _state.value = UiState.Error(it.friendlyMessage())
+                    }
+                }
             _refreshing.value = false
         }
     }
+
+    private fun matches(type: ShelfType, category: Category?): Boolean =
+        _shelfType.value == type && _category.value == category
 
     fun selectShelf(type: ShelfType) {
         if (_shelfType.value == type) return
@@ -220,30 +235,40 @@ class ShelfViewModel : ViewModel() {
     }
 
     fun reload() {
+        reloadJob?.cancel()
         extendJob?.cancel()
         _loadingMore.value = false
         _loadingAll.value = false
         page = 1
         accumulated.clear()
         _state.value = UiState.Loading
-        viewModelScope.launch {
-            repo.shelf(_shelfType.value, _category.value, page)
+        val type = _shelfType.value
+        val category = _category.value
+        reloadJob = viewModelScope.launch {
+            repo.shelf(type, category, 1)
                 .onSuccess {
+                    // 快速切换页签/类目时，先发出的旧请求可能后返回，丢弃以免串列表。
+                    if (!matches(type, category)) return@onSuccess
                     pages = it.pages
                     accumulated.addAll(it.data)
                     _state.value = UiState.Success(accumulated.toList())
                 }
-                .onFailure { _state.value = UiState.Error(it.friendlyMessage()) }
+                .onFailure {
+                    if (matches(type, category)) _state.value = UiState.Error(it.friendlyMessage())
+                }
         }
     }
 
     fun loadMore() {
         if (_loadingMore.value || _loadingAll.value || page >= pages) return
         _loadingMore.value = true
+        val type = _shelfType.value
+        val category = _category.value
         extendJob = viewModelScope.launch {
             try {
-                repo.shelf(_shelfType.value, _category.value, page + 1)
+                repo.shelf(type, category, page + 1)
                     .onSuccess {
+                        if (!matches(type, category)) return@onSuccess
                         page += 1
                         pages = it.pages
                         accumulated.addAll(it.data)

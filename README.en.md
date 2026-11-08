@@ -23,7 +23,7 @@
 
 ## About
 
-NeoDB Lite is an unofficial Android client for [NeoDB](https://neodb.social) and compatible instances. It helps you browse, search, and bookmark books, films, TV series, music, games, podcasts, and performances from your phone. This README covers the features currently available in NeoDB Lite.
+NeoDB Lite is an unofficial Android client for [NeoDB](https://neodb.social) and compatible instances. It helps you browse, search, and bookmark books, films, TV series, music, games, podcasts, and performances from your phone.
 
 ## Features
 
@@ -31,7 +31,7 @@ NeoDB Lite is an unofficial Android client for [NeoDB](https://neodb.social) and
 - Discover feed: browse trending media by category and long-press items for quick marking.
 - Item search: search across or within categories, keep recent queries, and show your marks and ratings in result rows.
 - Item details: view covers, descriptions, tags, external links, ratings, and community posts.
-- Item marking: set shelf status, rating, note, tags, and visibility, with space-separated tags, tag suggestions, and an optional mark date that formats separators and flags invalid or future dates.
+- Item marking: manage shelf status, ratings, notes, tags, visibility, and mark dates, with tag suggestions and date validation. Separate tags with spaces.
 - My shelf: filter marks by status, category, tag, or keyword, with editing, deletion, and calendar views.
 - My profile: view account details, shelf statistics, recent completions, and created or liked collections.
 - Preferences: switch themes or languages, check for updates, or log out.
@@ -62,7 +62,7 @@ The APK currently ships `arm64-v8a` and `armeabi-v7a` builds only.
 
 The app can check for new versions on startup or from settings. When an update is available, you can download and install it in the app, or download it manually from Releases.
 
-If Android refuses to install over the current build, uninstall the old version first and then install the APK from Releases again.
+If an APK cannot be installed over the current version, check its source and signature first. Uninstalling the existing app may erase local data.
 
 ## Data & Privacy
 

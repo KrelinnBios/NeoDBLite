@@ -1,6 +1,6 @@
 # AGENTS.md
 
-本文件适用于整个仓库，作为 AI 编码代理修改本项目时的唯一项目规范。除非用户另有要求，使用中文回复和说明。
+本文件适用于整个仓库，作为 AI 编码代理修改本项目时的全仓库总入口。除非用户另有要求，使用中文回复和说明。
 
 ## 项目状态
 
@@ -41,47 +41,6 @@ NeoDB Lite 处于稳定维护阶段，这是理解本仓库的最高优先级前
 - 应用内更新源为 `KrelinnBios/NeoDBLite` 的 GitHub Releases。
 - 界面语言不使用 Android 资源本地化，统一走应用内字符串表 `AppLanguage` / `AppStrings`。
 
-## 代码地图
-
-主源码位于 `app/src/main/java/com/krelinnbios/neodblite/`。
-
-- `MainActivity.kt`：应用入口、主导航、OAuth deep link 接收。
-- `NeoDBLiteApplication.kt`：Application 初始化。
-- `data/model/`：数据模型与枚举，如 `ItemBrief`、`MarkSchema`、`Category`、`ShelfType`、`Visibility`。
-- `data/NeoDBApi.kt`：Retrofit API 定义。
-- `data/NeoDBClient.kt`：按实例 host 构建 Retrofit，并注入鉴权。
-- `data/NeoDBRepository.kt`：业务仓库，统一 IO 调度与 `Result` 返回。
-- `data/AuthStore.kt`、`data/AuthRepository.kt`：实例信息、令牌、OAuth 客户端凭据和登录流程。
-- `global/AppContainer.kt`：手动依赖容器；`OAuthBus`、`MarkEventBus` 负责跨层事件。
-- `ui/vm/`：页面 ViewModel 和 StateFlow 状态。
-- `ui/page/`：Compose 页面。
-- `ui/component/`：复用组件、标记编辑器和更新弹窗。
-- `ui/theme/`、`ui/i18n/`：主题与应用内多语言。
-- `util/AppUpdateManager.kt`：应用内更新。
-- `util/CommunityHtmlParser.kt`、`util/ProfileHtmlParser.kt`、`util/ProfileUrl.kt`：外部页面内容与链接处理。
-- `app/src/test/`：JVM 单元测试，覆盖鉴权 host、更新解析、标记提交、社区内容和我的主页解析等部分逻辑。
-- `.github/workflows/ci.yml`：日常编译与 JVM 单测门禁。
-- `.github/workflows/build-apk.yml`：手动或 Release 的签名 APK 构建。
-- `.github/workflows/release.yml`：读取 `.github/release-version` 创建 Release，并触发签名 APK 构建。
-
-不要仅凭目录名判断职责；需要追溯行为时先搜索目标 symbol 的定义和引用。
-
-## 当前功能边界
-
-以下描述的是稳定维护阶段已经存在的能力，不是未来路线图：
-
-- 实例登录：填写 NeoDB 实例域名，通过 Mastodon 兼容 OAuth 授权码流程登录并持久化令牌。
-- 发现与搜索：按类目查看趋势榜、跨类目或按类目搜索、分页加载、管理最近搜索历史。
-- 条目详情：展示封面、评分、简介、标签、外部来源、账号标记和公开的短评、长评、笔记等社区内容。
-- 标记管理：设置书架状态、0～10 评分、短评、标签、可见性和联邦宇宙同步选项，支持标签建议、指定标记日期、修改与删除。
-- 我的书架：按状态、类目或标签分页查看标记，支持标题过滤与日历视图。
-- 收藏单：查看自己创建或收藏的收藏单及条目，当前为只读，不支持创建或编辑。
-- 我的主页：展示资料、书架统计、最近完成条目和收藏单入口；设置通过弹窗承载。
-- 主题与语言：多套配色主题以及简体中文、繁體中文、English 应用内切换。
-- 应用更新：启动静默检查和手动检查，支持多源下载、APK 版本与签名校验、系统安装器。
-
-除非用户明确要求，不要把缺少创建收藏单等当前边界自动解释为待实现事项。
-
 ## 开始任务前
 
 - 先读取与任务有关的实现、调用链和已有测试，不根据文件名或界面表现直接猜测根因。
@@ -91,94 +50,6 @@ NeoDB Lite 处于稳定维护阶段，这是理解本仓库的最高优先级前
 - 不把一次局部修复扩展为架构清理、统一命名、全局格式化或无关依赖升级。
 - 如果任务目标与现有稳定行为冲突，指出冲突和影响，再按用户明确决定实施。
 
-## 本地运行与验证
-
-如果只是阅读或审阅仓库，无需执行构建。修改代码时按范围选择验证。
-
-Windows：
-
-```powershell
-.\gradlew.bat compileDebugKotlin
-.\gradlew.bat testDebugUnitTest
-.\gradlew.bat assembleDebug
-.\gradlew.bat clean assembleDebug
-```
-
-Linux/macOS/CI 对应使用 `./gradlew`。
-
-- Kotlin 改动至少运行 `compileDebugKotlin`。
-- 改到更新解析、host 归一化、标记提交、社区内容或我的主页解析等已有测试覆盖的模块时，同时运行 `testDebugUnitTest`。
-- 新增可由纯 JVM 验证的逻辑时，补充或更新 `app/src/test/` 下的单元测试。
-- 纯文档、图片或资源说明修改无需运行 Gradle。
-- 增量构建出现缓存损坏时再使用 `clean assembleDebug`，不要把 `clean` 当作默认命令。
-- 本地通常没有连接设备或模拟器；UI、OAuth 回调、系统安装器和不同 NeoDB 实例的网络行为仍需真实设备或实例确认。
-
-## 架构速览
-
-### 状态与数据流
-
-- `AppContainer` 提供手动依赖注入，页面 ViewModel 通过 `App.container.repository` 访问数据层。
-- ViewModel 使用 StateFlow 暴露 UI 状态；不要在 Composable 中复制网络、解析或持久化逻辑。
-- `NeoDBRepository` 负责业务请求、IO 调度和错误封装；新增同类操作优先沿用该层。
-- `OAuthBus` 传递授权回调 code，`MarkEventBus` 同步标记变化。
-
-### 鉴权
-
-- OAuth 流程为：`POST /api/v1/apps` 注册应用 → 浏览器打开 `/oauth/authorize` → 重定向到 `neodblite://oauth/callback?code=...` → `POST /oauth/token` 换取 access token。
-- `MainActivity` 使用 `singleTask` 和 intent-filter 接收重定向，code 经 `OAuthBus` 交给 `AuthViewModel.handleAuthCode`。
-- OAuth 客户端凭据按实例 host 持久化复用。
-- token 同时缓存在 `AuthStore` 内存字段中，供不能挂起的 OkHttp 拦截器读取。
-
-### 网络
-
-- NeoDB 实例可配置，默认是 `neodb.social`；host 归一化统一走 `AuthStore.normalizeHost`。
-- `NeoDBClient.configure(host)` 在实例变化时重建 Retrofit；token 变化不要求重建。
-- 条目详情使用条目自身携带的 `api_url` 经 `@Url` 请求，避免 `tv/season` 等类目路径差异。
-- 我的主页和部分社区内容依赖外部 HTML 解析；修改解析器时应尽量基于真实样本和精确条件。
-
-## 已确立的决定
-
-以下内容解释当前实现为什么这样工作。除非用户明确要求改变对应行为，不应仅凭通用最佳实践将其删除或替换。
-
-### 标记与展示
-
-- NeoDB 评分口径是 0～10；界面展示为 5 星、半星粒度。
-- 提交的 `rating_grade` 为 0～10 整数；0 表示未评分，提交时省略该字段。
-- 书架状态的显示动词会随不同类目变化，不要把某一类目的文字硬编码为通用状态名。
-- 标记修改后通过现有事件和状态流同步页面，不在页面之间另建临时全局状态。
-- **书架列表排序**：书架页面的条目排序遵循 NeoDB 服务器返回的顺序。修改标记后，`ShelfViewModel.saveMark()` 会调用 `reload()` 重新拉取数据；条目的最终位置由实例返回结果决定，包括指定历史标记日期的情况。客户端不做额外排序或位置保持，也不保证刚修改的条目一定排在最前面。
-- **标签输入与建议**：标签输入框使用 `TextFieldValue` 管理文本和光标位置，仅以普通空格分隔标签；逗号、中文逗号、顿号和其他空白字符会作为标签内容保留。点击标签建议时替换光标所在的标签片段并去重，自动在末尾添加空格并将光标定位到末尾，方便用户连续输入多个标签。标签建议框仅在输入框获得焦点时显示。
-- **指定标记日期**：编辑器默认关闭指定日期，不主动指定时省略 `created_time`，由服务端保留原时间或记录状态变更时间。输入使用数字键盘，年份满 4 位、月份满 2 位时立即显示 `-`；分隔符通过 `VisualTransformation` 显示，光标和退格按原始数字处理。数字超过 8 位、完整日期无效或晚于设备当地今天时，日期文字显示主题色及中间删除线，保存时阻止提交。指定日期须通过严格的 `YYYY-MM-DD` 校验，并提交完整 UTC 时间戳，与书架和日历直接取时间戳日期部分的口径一致；日期格式化与校验须兼容 API 24。
-
-### 更新、版本与签名
-
-- Release 版本名由 tag 去掉可选的 `v` 前缀得到，版本码使用 `github.run_number`；发布包不得回落到 Gradle 默认版本，否则可能形成更新循环。
-- 应用更新存在多源下载回退；每个下载结果都要校验 APK 版本号、版本码和签名，避免展示新版却安装到旧包或非预期包。
-- 签名材料由环境变量或 Gradle 属性提供。完整时使用 `stable` 签名；debug 缺失时允许回退 AGP debug 签名；release 缺失时不伪造正式签名。
-- CI 从 secrets 还原 keystore，正式签名 secrets 不完整时应失败。
-- debug、release 和 CI 产物统一命名为 `NeoDB-Lite.apk`。
-- AGP 8.13 的 APK 文件名设置依赖 `VariantOutputImpl`；不要在无明确升级任务时顺手改写或升级相关构建逻辑。
-
-### 工程约束
-
-- Gson 通过反射读写数据模型，相关模型的 ProGuard keep 规则不可随意删除。
-- 不顺手升级 Gradle、AGP、Kotlin、Compose、OkHttp、Retrofit 等依赖；依赖升级必须是明确任务并单独验证。
-- 不为了“现代化”引入新的 DI 框架、数据库、模块化方案或导航框架。
-- 不为了拆文件而重写已经稳定工作的页面或状态链路。
-- 不提交构建产物、签名材料、`.env`、`local.properties`、临时响应、抓包文件或设备日志。
-
-## CI 与发布
-
-以 `.github/workflows/` 中各工作流的当前内容为准。本节只说明流程语义，不为未来 Action 或依赖升级制定路线。
-
-- `ci.yml`：push 到 `main` 和 pull request 时执行 `compileDebugKotlin` 与 `testDebugUnitTest`。
-- `release.yml`：`main` 上的 `.github/release-version` 变更或手动运行时，读取其中的 `v主版本.次版本.修订版本`，创建标签和 Release、生成发布说明，再显式触发 `build-apk.yml`；值为 `unreleased` 时跳过发布。
-- `build-apk.yml`：通过 `workflow_dispatch` 或 Release 发布触发，先运行 release 单测，再构建并校验签名 APK。自动发布通过 `release_tag` 指定要构建的标签；没有指定标签的纯手动构建使用 Gradle 默认版本。
-- Release 构建要求完整的正式签名 secrets；签名材料不存在于仓库中。
-- Release 最终附件名为 `NeoDB-Lite.apk`。
-- `ci.yml` 和 `build-apk.yml` 通过 `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` 使用 Node 24；普通维护中不要删除或降级该兼容约束。
-- 当前工作流使用的 Action 版本以文件本身为准，不在普通维护任务中主动升级或降级。
-
 ## 修改原则
 
 - 默认选择与现有代码一致的实现，优先范围小、风险低、可验证的修改。
@@ -187,6 +58,15 @@ Linux/macOS/CI 对应使用 `./gradlew`。
 - 不顺手升级依赖、重排无关代码、统一整份格式或修改版本号。
 - 中文文档统一使用 UTF-8，避免 PowerShell 默认编码造成乱码。
 - Git diff 只包含本次任务需要的内容，不混入构建产物、设备日志、临时响应或其他无关文件。
+
+## 专项规范导航
+
+原有项目特有约束已按主题迁移到以下**仓库内部**文件，相关任务必须先阅读对应专题；根目录的项目状态、安全边界和提交规则仍对整个仓库有效。目录级 `AGENTS.md` 只作局部导航，不覆盖根规则。
+
+- [architecture ](docs/agent/architecture.md)：代码地图、数据流、鉴权、网络与功能边界。
+- [decisions ](docs/agent/decisions.md)：稳定维护项目的历史实现决定及兼容性要求；修改旧行为前必须检查。
+- [development ](docs/agent/development.md)：本地运行、测试和设备验证。
+- [release ](docs/agent/release.md)：CI、签名、版本和发行约束。
 
 ## 文档同步
 

@@ -6,6 +6,7 @@ import com.krelinnbios.neodblite.data.model.category
 import com.krelinnbios.neodblite.data.model.Category
 import com.krelinnbios.neodblite.data.model.MarkSchema
 import com.krelinnbios.neodblite.data.model.PagedTagItems
+import com.krelinnbios.neodblite.data.model.ShelfType
 import com.krelinnbios.neodblite.data.model.TagItem
 import com.krelinnbios.neodblite.global.App
 import com.krelinnbios.neodblite.ui.friendlyMessage
@@ -36,6 +37,7 @@ class TagItemsViewModel : ViewModel() {
 
     private var loadedUuid: String? = null
     private var category: Category? = null
+    private var shelfType: ShelfType? = null
     private var page = 0
     private var pages = 1
     private val accumulated = mutableListOf<MarkSchema>()
@@ -43,10 +45,11 @@ class TagItemsViewModel : ViewModel() {
     /** 滚动加载/全量加载共用一个任务句柄：搜索时需能取消在途的滚动加载并由全量拉取接管。 */
     private var extendJob: Job? = null
 
-    fun loadOnce(uuid: String, category: Category?) {
-        if (loadedUuid == uuid && this.category == category && _state.value is UiState.Success) return
+    fun loadOnce(uuid: String, category: Category?, shelfType: ShelfType? = null) {
+        if (loadedUuid == uuid && this.category == category && this.shelfType == shelfType && _state.value is UiState.Success) return
         loadedUuid = uuid
         this.category = category
+        this.shelfType = shelfType
         reload()
     }
 
@@ -133,7 +136,9 @@ class TagItemsViewModel : ViewModel() {
                 val mark = uuid?.let { repo.mark(it).getOrNull() }
                 mark?.copy(item = mark.item ?: item) ?: MarkSchema(item = item)
             }
-        }.awaitAll()
+        }.awaitAll().filter { mark ->
+            shelfType?.let { it.apiValue == mark.shelfType } ?: true
+        }
     }
 }
 

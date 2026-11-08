@@ -118,8 +118,8 @@ fun ShelfPage(
             shelfVM.consumeToast()
         }
     }
-    LaunchedEffect(selectedTag, category) {
-        selectedTag?.uuid?.let { tagItemsVM.loadOnce(it, category) }
+    LaunchedEffect(selectedTag, category, shelfType) {
+        selectedTag?.uuid?.let { tagItemsVM.loadOnce(it, category, shelfType) }
     }
 
     val shelves = ShelfType.entries

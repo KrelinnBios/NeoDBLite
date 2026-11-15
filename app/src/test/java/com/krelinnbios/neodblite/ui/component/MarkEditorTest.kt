@@ -5,6 +5,8 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import com.google.gson.Gson
 import com.krelinnbios.neodblite.data.model.MarkInRequest
+import com.krelinnbios.neodblite.data.model.ShelfType
+import com.krelinnbios.neodblite.data.model.Visibility
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -260,6 +262,32 @@ class MarkEditorTest {
 
         assertEquals("2024-02-29T00:00:00Z", json.get("created_time").asString)
     }
+
+    @Test
+    fun markDateEditorExpandsExistingMarkDateByDefault() {
+        val draft = markDraft(createdTime = "2024-02-29T12:34:56Z")
+
+        assertTrue(initialSpecifyMarkDate(draft))
+        assertEquals("20240229", initialMarkDateInput(draft).text)
+    }
+
+    @Test
+    fun markDateEditorStaysCollapsedWithoutExistingMarkDate() {
+        listOf(null, markDraft(createdTime = null), markDraft(createdTime = "2024")).forEach { draft ->
+            assertFalse(initialSpecifyMarkDate(draft))
+            assertEquals(currentMarkDate().replace("-", ""), initialMarkDateInput(draft).text)
+        }
+    }
+
+    private fun markDraft(createdTime: String?) = MarkDraft(
+        shelf = ShelfType.COMPLETE,
+        grade = 0,
+        comment = "",
+        visibility = Visibility.PUBLIC,
+        tags = emptyList(),
+        shareToFediverse = false,
+        createdTime = createdTime
+    )
 
     private fun input(text: String) = TextFieldValue(text, selection = TextRange(text.length))
 }

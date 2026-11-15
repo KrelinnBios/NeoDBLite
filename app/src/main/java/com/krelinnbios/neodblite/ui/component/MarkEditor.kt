@@ -109,6 +109,14 @@ internal fun hasInvalidMarkTagInput(text: String): Boolean = text.any { it == ',
 internal fun currentMarkDate(now: Date = Date()): String =
     SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(now)
 
+internal fun initialSpecifyMarkDate(existing: MarkDraft?): Boolean =
+    existing?.createdTime?.length?.let { it >= 10 } == true
+
+internal fun initialMarkDateInput(existing: MarkDraft?): TextFieldValue {
+    val date = existing?.createdTime?.takeIf { it.length >= 10 }?.take(10) ?: currentMarkDate()
+    return TextFieldValue(date.replace("-", ""))
+}
+
 internal fun formatMarkDateInput(digits: String): String = buildString {
     digits.forEachIndexed { index, digit ->
         append(digit)
@@ -192,12 +200,9 @@ fun MarkEditor(
         mutableStateOf(TextFieldValue(existing?.tags?.joinToString(" ") ?: ""))
     }
     var shareToFediverse by remember(existing) { mutableStateOf(existing?.shareToFediverse ?: false) }
-    // 未主动指定日期时省略 created_time，由服务端保留原时间或记录状态变更时间。
-    var specifyDate by remember(existing) { mutableStateOf(false) }
-    var selectedDate by remember(existing) {
-        val date = existing?.createdTime?.takeIf { it.length >= 10 }?.take(10) ?: currentMarkDate()
-        mutableStateOf(TextFieldValue(date.replace("-", "")))
-    }
+    // 已有标记日期时默认展开并回填原日期；未指定时省略 created_time，由服务端保留原时间或记录状态变更时间。
+    var specifyDate by remember(existing) { mutableStateOf(initialSpecifyMarkDate(existing)) }
+    var selectedDate by remember(existing) { mutableStateOf(initialMarkDateInput(existing)) }
     var dateError by remember(existing) { mutableStateOf(false) }
     var tagError by remember(existing) { mutableStateOf(false) }
     var tagFieldFocused by remember { mutableStateOf(false) }
@@ -371,6 +376,8 @@ fun MarkEditor(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Switch(checked = specifyDate, onCheckedChange = {
+                // 每次开启都取设备当地当天，避免沿用已有标记的旧日期。
+                if (it) selectedDate = TextFieldValue(currentMarkDate().replace("-", ""))
                 specifyDate = it
                 dateError = false
             })

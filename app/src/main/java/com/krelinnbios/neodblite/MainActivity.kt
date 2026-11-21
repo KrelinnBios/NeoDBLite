@@ -202,7 +202,6 @@ private fun MainScaffold(
         if (refreshedLanguage != currentLanguage) {
             refreshedLanguage = currentLanguage
             discoverVM.refresh()
-            searchVM.refresh()
             shelfVM.refresh()
             profileVM.refresh()
         }
@@ -281,7 +280,8 @@ private fun MainScaffold(
             composable("discover") {
                 DiscoverPage(
                     discoverVM = discoverVM,
-                    onOpenSearch = { navController.navigate("search") },
+                    // 打开的是新的搜索界面，先清掉上次残留的关键词和结果；从详情返回不经过这里。
+                    onOpenSearch = { searchVM.resetForNewScreen(); navController.navigate("search") },
                     onOpenItem = openItem
                 )
             }
@@ -355,8 +355,7 @@ private fun MainScaffold(
                     detailVM = detailVM,
                     onBack = { navController.popBackStack() },
                     onSearchTag = { tag ->
-                        searchVM.onQueryChange(tag)
-                        searchVM.submit()
+                        searchVM.searchFor(tag)
                         navController.navigate("search") {
                             launchSingleTop = true
                         }

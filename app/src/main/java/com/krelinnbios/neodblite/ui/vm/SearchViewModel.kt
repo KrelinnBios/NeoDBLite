@@ -37,39 +37,60 @@ class SearchViewModel : ViewModel() {
     private var pages = 1
     private val accumulated = mutableListOf<MarkSchema>()
 
+    /** 请求序号：每次新的搜索、刷新或重置 +1；在途回包序号落后即整体丢弃，避免旧结果覆盖新状态。 */
+    private var epoch = 0
+
     private val _loadingMore = MutableStateFlow(false)
     val loadingMore: StateFlow<Boolean> = _loadingMore.asStateFlow()
 
     private val _refreshing = MutableStateFlow(false)
     val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
 
+    /** 从入口打开新的搜索界面前调用：清掉上次残留的关键词和结果，回到未搜索的初始状态。 */
+    fun resetForNewScreen() {
+        resetResults()
+        _query.value = ""
+    }
+
+    /** 清空当前结果状态，并作废仍在途的旧回包。 */
+    private fun resetResults() {
+        epoch++
+        page = 1
+        pages = 1
+        accumulated.clear()
+        _state.value = null
+    }
+
     /** 下拉刷新：重跑当前关键词第一页，保留旧结果直到成功。 */
     fun refresh() {
         val q = _query.value.trim()
         if (q.isBlank() || _refreshing.value) return
         _refreshing.value = true
+        val requestEpoch = ++epoch
         viewModelScope.launch {
-            repo.search(q, _category.value, 1)
+            val result = repo.search(q, _category.value, 1)
+            _refreshing.value = false
+            if (requestEpoch != epoch) return@launch
+            result
                 .onSuccess {
+                    val marks = loadMarks(it.data)
+                    if (requestEpoch != epoch) return@onSuccess
                     page = 1
                     pages = it.pages
                     accumulated.clear()
-                    appendUnique(loadMarks(it.data))
+                    appendUnique(marks)
                     _state.value = UiState.Success(accumulated.toList())
                 }
-                .onFailure { if (_state.value !is UiState.Success) _state.value = UiState.Error(it.friendlyMessage()) }
-            _refreshing.value = false
+                .onFailure {
+                    if (requestEpoch != epoch) return@onFailure
+                    if (_state.value !is UiState.Success) _state.value = UiState.Error(it.friendlyMessage())
+                }
         }
     }
 
     fun onQueryChange(value: String) {
         _query.value = value
-        if (value.isBlank()) {
-            page = 1
-            pages = 1
-            accumulated.clear()
-            _state.value = null
-        }
+        if (value.isBlank()) resetResults()
     }
 
     fun selectCategory(category: Category?) {
@@ -100,14 +121,22 @@ class SearchViewModel : ViewModel() {
         page = 1
         accumulated.clear()
         _state.value = UiState.Loading
+        val requestEpoch = ++epoch
         viewModelScope.launch {
-            repo.search(q, _category.value, page)
+            val result = repo.search(q, _category.value, page)
+            if (requestEpoch != epoch) return@launch
+            result
                 .onSuccess {
+                    val marks = loadMarks(it.data)
+                    if (requestEpoch != epoch) return@onSuccess
                     pages = it.pages
-                    appendUnique(loadMarks(it.data))
+                    appendUnique(marks)
                     _state.value = UiState.Success(accumulated.toList())
                 }
-                .onFailure { _state.value = UiState.Error(it.friendlyMessage()) }
+                .onFailure {
+                    if (requestEpoch != epoch) return@onFailure
+                    _state.value = UiState.Error(it.friendlyMessage())
+                }
         }
     }
 
@@ -115,15 +144,19 @@ class SearchViewModel : ViewModel() {
         if (_loadingMore.value || page >= pages) return
         val q = _query.value.trim().ifBlank { return }
         _loadingMore.value = true
+        val requestEpoch = epoch
         viewModelScope.launch {
-            repo.search(q, _category.value, page + 1)
-                .onSuccess {
-                    page += 1
-                    pages = it.pages
-                    appendUnique(loadMarks(it.data))
-                    _state.value = UiState.Success(accumulated.toList())
-                }
+            val result = repo.search(q, _category.value, page + 1)
             _loadingMore.value = false
+            if (requestEpoch != epoch) return@launch
+            result.onSuccess {
+                val marks = loadMarks(it.data)
+                if (requestEpoch != epoch) return@onSuccess
+                page += 1
+                pages = it.pages
+                appendUnique(marks)
+                _state.value = UiState.Success(accumulated.toList())
+            }
         }
     }
 
